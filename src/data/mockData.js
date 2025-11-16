@@ -56,3 +56,27 @@ export const mapSensorData = [
   { id: 'SS-003', lat: 20.9850, lng: 105.7938, name: 'Hà Đông', type: 'AQI' },
   { id: 'SS-004', lat: 21.0374, lng: 105.7839, name: 'Cầu Giấy', type: 'AQI & Noise' },
 ];
+
+export const airQualityZones = {
+  type: 'FeatureCollection',
+  features: [
+    {
+      type: 'Feature',
+      // Bán kính quanh trung tâm
+      properties: { status: 'bad', name: 'Vùng Ô nhiễm cao', radiusKm: 2.5 },
+      geometry: {
+        type: 'Point',
+        coordinates: [105.85, 21.02] // Tọa độ tâm Hoàn Kiếm
+      }
+    },
+    {
+      type: 'Feature',
+      // Bán kính khu vực Tây Hồ/Cầu Giấy
+      properties: { status: 'good', name: 'Vùng Không khí sạch', radiusKm: 3.0 },
+      geometry: {
+        type: 'Point',
+        coordinates: [105.76, 21.06] // Tọa độ tâm khu vực Mỹ Đình/Cầu Giấy
+      }
+    }
+  ]
+};

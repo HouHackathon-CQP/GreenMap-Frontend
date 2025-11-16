@@ -1,9 +1,10 @@
 import React from 'react';
-import { LayoutDashboard, Map, MapPin, BatteryCharging, Flag, BarChart3, Settings, X } from 'lucide-react';
+import { LayoutDashboard, Map, MapPin, BatteryCharging, Flag, BarChart3, Settings, X, Globe } from 'lucide-react';
 
 export default function Sidebar({ currentPage, setCurrentPage, isOpen, setIsOpen }) {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'airMap', label: 'Bản đồ Phân vùng', icon: Globe },
     { id: 'sensors', label: 'Quản lý Cảm biến', icon: MapPin },
     { id: 'greenPoints', label: 'Quản lý Điểm Xanh', icon: Map },
     { id: 'chargingStations', label: 'Quản lý Trạm Sạc', icon: BatteryCharging },
