@@ -1,8 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-// 1. Import dữ liệu từ file data chung
-// Đảm bảo bạn đã thêm mapSensorData vào file src/data/mockData.js như hướng dẫn trước
 import { mapSensorData } from '../data/mockData';
 
 const GreenMap = () => {
@@ -59,7 +57,7 @@ const GreenMap = () => {
         });
       }
       
-      // QUAN TRỌNG: Lệnh này giúp bản đồ nhận diện đúng kích thước khung chứa
+      // Lệnh này giúp bản đồ nhận diện đúng kích thước khung chứa
       map.resize();
     });
 
