@@ -22,43 +22,100 @@ const GreenMap = () => {
     // 3. Khởi tạo bản đồ
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: {
-        version: 8,
-        sources: {
-          'osm-tiles': {
-            type: 'raster',
-            tiles: [
-              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            ],
-            tileSize: 256,
-            attribution: '© OpenStreetMap Contributors',
-          },
-        },
-        layers: [
-          {
-            id: 'osm-tiles',
-            type: 'raster',
-            source: 'osm-tiles',
-            minzoom: 0,
-            maxzoom: 19,
-          },
-        ],
-      },
+      // Dùng style vector bright của OpenFreeMap để có map đẹp hơn
+      style: 'https://tiles.openfreemap.org/styles/bright',
       center: [105.83, 21.02], // Tâm mặc định tại Hà Nội
-      zoom: 12,
+      zoom: 15.5,
+      pitch: 45,
+      bearing: -17.6,
+      antialias: true, // làm mịn cạnh khi dựng khối 3D
     });
 
     // 4. Khi bản đồ load xong, tự động zoom và resize
     map.on('load', () => {
       if (!bounds.isEmpty()) {
         map.fitBounds(bounds, {
-          padding: 50, // Khoảng cách đệm xung quanh (px)
-          maxZoom: 15, // Không zoom quá gần
+          padding: 50,
+          maxZoom: 16,
+        });
+
+        // Giữ mức zoom tối thiểu để thấy rõ extrusions
+        map.once('idle', () => {
+          if (map.getZoom() < 15) {
+            map.easeTo({ zoom: 15, duration: 800 });
+          }
         });
       }
       
       // Lệnh này giúp bản đồ nhận diện đúng kích thước khung chứa
       map.resize();
+
+      // Thêm dữ liệu tòa nhà và dựng extrusions
+      const layers = map.getStyle().layers || [];
+      const labelLayer = layers.find(
+        (layer) => layer.type === 'symbol' && layer.layout && layer.layout['text-field']
+      );
+      const labelLayerId = labelLayer?.id;
+
+      if (!map.getSource('openfreemap')) {
+        map.addSource('openfreemap', {
+          url: 'https://tiles.openfreemap.org/planet',
+          type: 'vector',
+        });
+      }
+
+      if (!map.getLayer('3d-buildings')) {
+        const extrusionHeight = [
+          'coalesce',
+          ['get', 'render_height'],
+          ['get', 'height'],
+          ['*', ['coalesce', ['get', 'building:levels'], ['get', 'levels'], 0], 3],
+        ];
+        const extrusionMinHeight = [
+          'coalesce',
+          ['get', 'render_min_height'],
+          ['get', 'min_height'],
+          ['*', ['coalesce', ['get', 'min_level'], 0], 3],
+          0,
+        ];
+
+        map.addLayer(
+          {
+            id: '3d-buildings',
+            source: 'openfreemap',
+            'source-layer': 'building',
+            type: 'fill-extrusion',
+            minzoom: 15,
+            filter: ['!=', ['get', 'hide_3d'], true],
+            paint: {
+              'fill-extrusion-color': [
+                'interpolate',
+                ['linear'],
+                extrusionHeight,
+                0,
+                'lightgray',
+                200,
+                'royalblue',
+                400,
+                'lightblue',
+              ],
+              'fill-extrusion-height': [
+                'case',
+                ['>=', ['zoom'], 15],
+                extrusionHeight,
+                0,
+              ],
+              'fill-extrusion-base': [
+                'case',
+                ['>=', ['zoom'], 15],
+                extrusionMinHeight,
+                0,
+              ],
+            },
+          },
+          labelLayerId
+        );
+      }
     });
 
     // 5. Loop qua dữ liệu để vẽ các Marker
