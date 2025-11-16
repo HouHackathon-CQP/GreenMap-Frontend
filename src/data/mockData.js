@@ -48,3 +48,11 @@ export const notificationsData = [
   { id: 2, title: "Báo cáo mới", message: "Người dân gửi báo cáo rác thải tại Hồ Tây.", time: "30 phút trước", type: "info" },
   { id: 3, title: "Hệ thống", message: "Đã hoàn tất sao lưu dữ liệu định kỳ.", time: "2 giờ trước", type: "success" },
 ];
+
+// --- THÊM MỚI: Dữ liệu cho bản đồ ---
+export const mapSensorData = [
+  { id: 'SS-001', lat: 21.0285, lng: 105.8542, name: 'Hoàn Kiếm', type: 'AQI' },
+  { id: 'SS-002', lat: 21.0228, lng: 105.8019, name: 'Đống Đa', type: 'Noise' },
+  { id: 'SS-003', lat: 20.9850, lng: 105.7938, name: 'Hà Đông', type: 'AQI' },
+  { id: 'SS-004', lat: 21.0374, lng: 105.7839, name: 'Cầu Giấy', type: 'AQI & Noise' },
+];
