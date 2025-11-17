@@ -1,4 +1,3 @@
-// src/components/Sidebar.jsx
 import React from 'react';
 // Thêm icon Bike, Globe, MapPin.
 import { 
