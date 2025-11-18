@@ -1,4 +1,3 @@
-// src/data/mockData.js
 
 export const aqiTrendData = [
   { name: '00:00', aqi: 45 },

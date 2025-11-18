@@ -1,3 +1,4 @@
+// src/App.jsx
 import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -5,8 +6,10 @@ import Dashboard from './pages/Dashboard';
 import ContentManagement from './pages/ContentManagement';
 import ReportApproval from './pages/ReportApproval';
 import Analytics from './pages/Analytics';
-import Settings from './pages/Settings'; // <-- QUAN TRỌNG 1: Phải import file Settings
-import { sensorData, greenPointsData, chargingStationsData } from './data/mockData';
+import Settings from './pages/Settings';
+import AirQualityMap from './pages/AirQualityMap';
+// Chỉ import mock data cho các trang chưa có API
+import { userReportsData } from './data/mockData';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -15,20 +18,29 @@ export default function App() {
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard />;
-      case 'sensors':
-        return <ContentManagement title="Quản lý Cảm biến" data={sensorData} columns={['ID', 'Vị trí', 'Loại', 'Trạng thái', 'Cập nhật']} />;
-      case 'greenPoints':
-        return <ContentManagement title="Quản lý Điểm Xanh" data={greenPointsData} columns={['ID', 'Tên', 'Phân loại']} />;
+        return <Dashboard />; // Dashboard giờ dùng GreenMap (đã gọi API) và Chart (vẫn mock)
+      case 'airMap':
+        return <AirQualityMap />; 
+      
+      // --- CÁC TRANG QUẢN LÝ GIỜ GỌI API ---
+      case 'publicParks':
+        return <ContentManagement title="Công viên/Điểm xanh" locationType="PUBLIC_PARK" />;
       case 'chargingStations':
-        return <ContentManagement title="Quản lý Trạm Sạc" data={chargingStationsData} columns={['ID', 'Tên', 'Nhà cung cấp', 'Trạng thái']} />;
+        return <ContentManagement title="Quản lý Trạm Sạc" locationType="CHARGING_STATION" />;
+      case 'bicycleRentals':
+        return <ContentManagement title="Trạm Thuê xe đạp" locationType="BICYCLE_RENTAL" />;
+      case 'touristAttractions':
+        return <ContentManagement title="Địa điểm Du lịch" locationType="TOURIST_ATTRACTION" />;
+
+      // --- CÁC TRANG NÀY VẪN DÙNG MOCK DATA ---
       case 'reports':
-        return <ReportApproval />;
+        // Cần tạo component riêng cho 'reports'
+        // Tạm thời dùng ReportApproval (vẫn đang dùng mockData)
+        return <ReportApproval />; 
       case 'analytics':
-        return <Analytics />;
+        return <Analytics />; // (Vẫn dùng mockData)
       case 'settings':
-        // --- QUAN TRỌNG 2: Sửa dòng này để hiển thị Component Settings ---
-        return <Settings />; 
+        return <Settings />;
       default:
         return <Dashboard />;
     }
