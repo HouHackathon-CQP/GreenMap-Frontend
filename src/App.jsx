@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -8,8 +7,6 @@ import ReportApproval from './pages/ReportApproval';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import AirQualityMap from './pages/AirQualityMap';
-// Chỉ import mock data cho các trang chưa có API
-import { userReportsData } from './data/mockData';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -18,9 +15,9 @@ export default function App() {
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard />; // Dashboard giờ dùng GreenMap (đã gọi API) và Chart (vẫn mock)
+        return <Dashboard />;
       case 'airMap':
-        return <AirQualityMap />; 
+        return <AirQualityMap />;
       
       // --- CÁC TRANG QUẢN LÝ GIỜ GỌI API ---
       case 'publicParks':
@@ -32,13 +29,12 @@ export default function App() {
       case 'touristAttractions':
         return <ContentManagement title="Địa điểm Du lịch" locationType="TOURIST_ATTRACTION" />;
 
-      // --- CÁC TRANG NÀY VẪN DÙNG MOCK DATA ---
+      // --- CÁC TRANG NÀY SẼ TỰ QUẢN LÝ DỮ LIỆU GIẢ ---
       case 'reports':
-        // Cần tạo component riêng cho 'reports'
-        // Tạm thời dùng ReportApproval (vẫn đang dùng mockData)
+        // Không cần truyền prop 'initialReports' nữa
         return <ReportApproval />; 
       case 'analytics':
-        return <Analytics />; // (Vẫn dùng mockData)
+        return <Analytics />; // (Analytics vẫn dùng mock bên trong nó)
       case 'settings':
         return <Settings />;
       default:

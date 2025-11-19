@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { Bell, User, ChevronDown, Menu, LogOut, Settings, UserCircle } from 'lucide-react';
-import { notificationsData } from '../data/mockData'; // Nhớ import dữ liệu
+
+// --- DỮ LIỆU GIẢ ĐÃ ĐƯỢC CHUYỂN VÀO ĐÂY ---
+// (API backend chưa có /notifications)
+const notificationsData = [
+  { id: 1, title: "Cảnh báo AQI", message: "Khu vực Hoàn Kiếm vượt ngưỡng 150.", time: "10 phút trước", type: "alert" },
+  { id: 2, title: "Báo cáo mới", message: "Người dân gửi báo cáo rác thải tại Hồ Tây.", time: "30 phút trước", type: "info" },
+  { id: 3, title: "Hệ thống", message: "Đã hoàn tất sao lưu dữ liệu định kỳ.", time: "2 giờ trước", type: "success" },
+];
 
 export default function Header({ setIsSidebarOpen, setCurrentPage }) {
   // State để quản lý đóng/mở dropdown
@@ -43,6 +50,7 @@ export default function Header({ setIsSidebarOpen, setCurrentPage }) {
                   <span className="text-xs bg-red-600 text-white px-2 py-0.5 rounded-full">3</span>
                 </div>
                 <div className="max-h-64 overflow-y-auto">
+                  {/* Sử dụng biến 'notificationsData' nội bộ */}
                   {notificationsData.map((notif) => (
                     <div key={notif.id} className="p-3 border-b border-gray-700/50 hover:bg-gray-700 transition-colors cursor-pointer">
                       <div className="flex justify-between items-start">
