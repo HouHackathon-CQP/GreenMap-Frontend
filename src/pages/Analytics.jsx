@@ -1,3 +1,4 @@
+// GreenMap-Frontend/src/pages/Analytics.jsx
 import React from 'react';
 import { BrainCircuit, FileText, Download } from 'lucide-react';
 

@@ -1,44 +1,46 @@
-// src/pages/ReportApproval.jsx
-import React from 'react';
-import { ExternalLink } from 'lucide-react';
-// --- ĐÃ XÓA DÒNG IMPORT MOCKDATA ---
+// GreenMap-Frontend/src/pages/ReportApproval.jsx
+import React, { useEffect, useState } from 'react';
+import { fetchReports, updateReportStatus } from '../apiService';
+import { Check, X, MapPin, Loader2 } from 'lucide-react';
 
-// --- DỮ LIỆU GIẢ ĐÃ ĐƯỢC CHUYỂN VÀO ĐÂY ---
-// (Vì API backend chưa có /reports)
-const userReportsData = [
-  { id: 'RP-101', type: 'Điểm nóng ô nhiễm', location: 'Ngã tư Sở', description: 'Khói bụi nghiêm trọng.', status: 'Pending' },
-  { id: 'RP-102', type: 'Thiếu cây xanh', location: 'Khu đô thị Mỗ Lao', description: 'Ít cây xanh, rất nóng.', status: 'Pending' },
-  { id: 'RP-103', type: 'Rác thải nhiều', location: 'Bờ hồ Văn Quán', description: 'Rác thải sinh hoạt.', status: 'Approved' },
-];
-
-// Component không còn nhận prop 'initialReports'
 export default function ReportApproval() {
-  const reports = userReportsData; // Sử dụng biến nội bộ
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const load = () => { setLoading(true); fetchReports().then(setReports).finally(() => setLoading(false)); };
+  useEffect(() => { load(); }, []);
+
+  const handleStatus = async (id, status) => {
+    setReports(reports.map(r => r.id === id ? { ...r, status } : r));
+    await updateReportStatus(id, status);
+  };
+
+  if (loading) return <div className="flex justify-center p-10"><Loader2 className="animate-spin text-green-500"/></div>;
 
   return (
-    <div className="bg-gray-800/60 p-4 md:p-6 rounded-xl shadow-lg border border-gray-700/50">
-      <h2 className="text-2xl font-bold text-green-300 mb-6">Duyệt Báo cáo từ Người dân (Dữ liệu giả)</h2>
+    <div className="bg-gray-800/60 p-6 rounded-xl shadow-lg border border-gray-700">
+      <div className="flex justify-between mb-6">
+        <h2 className="text-2xl font-bold text-green-300">Duyệt Báo Cáo</h2>
+        <button onClick={load} className="text-blue-400 text-sm">Làm mới</button>
+      </div>
       <div className="space-y-4">
-        {reports.map((report) => (
-          <div key={report.id} className="bg-gray-700/50 p-4 rounded-lg flex flex-col md:flex-row justify-between md:items-center">
-            <div className="mb-4 md:mb-0">
-              <div className="flex items-center space-x-3 mb-2">
-                <span className="font-bold text-lg">{report.type}</span>
-                <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${report.status === 'Pending' ? 'bg-yellow-500/30 text-yellow-300' : 'bg-green-500/30 text-green-300'}`}>
-                  {report.status}
-                </span>
-              </div>
-              <p className="text-gray-300 mb-1"><span className="font-semibold">Vị trí:</span> {report.location}</p>
-              <p className="text-gray-400 text-sm"><span className="font-semibold">Mô tả:</span> {report.description}</p>
+        {reports.length === 0 ? <p className="text-gray-500 text-center">Không có báo cáo.</p> : reports.map(r => (
+            <div key={r.id} className="bg-gray-700/40 p-5 rounded-lg border border-gray-700 flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                    <div className="flex justify-between">
+                        <h3 className="font-bold text-white text-lg">{r.title}</h3>
+                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${r.status==='PENDING'?'bg-yellow-500/20 text-yellow-400':r.status==='APPROVED'?'bg-green-500/20 text-green-400':'bg-red-500/20 text-red-400'}`}>{r.status}</span>
+                    </div>
+                    <p className="text-gray-400 text-xs mt-1 flex items-center"><MapPin size={12} className="mr-1"/> {r.latitude}, {r.longitude}</p>
+                    <p className="text-gray-300 mt-2 text-sm bg-gray-800/50 p-2 rounded">{r.description}</p>
+                    {r.status === 'PENDING' && (
+                        <div className="flex gap-3 mt-3">
+                            <button onClick={()=>handleStatus(r.id, 'APPROVED')} className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm flex items-center"><Check size={14} className="mr-1"/> Duyệt</button>
+                            <button onClick={()=>handleStatus(r.id, 'REJECTED')} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm flex items-center"><X size={14} className="mr-1"/> Từ chối</button>
+                        </div>
+                    )}
+                </div>
             </div>
-            {report.status === 'Pending' && (
-              <div className="flex space-x-3">
-                <button className="flex-1 md:flex-auto bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg">Duyệt</button>
-                <button className="flex-1 md:flex-auto bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg">Từ chối</button>
-                <button className="flex-1 md:flex-auto bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg"><ExternalLink size={16} /></button>
-              </div>
-            )}
-          </div>
         ))}
       </div>
     </div>
