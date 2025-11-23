@@ -27,7 +27,7 @@ export default function Login() {
       } else {
         setError('Token không hợp lệ.');
       }
-    } catch (err) {
+    } catch {
       setError('Đăng nhập thất bại. (Thử: admin / 123456)');
     } finally {
       setIsLoading(false);

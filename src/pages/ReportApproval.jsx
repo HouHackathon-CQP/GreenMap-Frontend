@@ -5,10 +5,20 @@ import { Check, X, MapPin, Loader2 } from 'lucide-react';
 
 export default function ReportApproval() {
   const [reports, setReports] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const load = () => { setLoading(true); fetchReports().then(setReports).finally(() => setLoading(false)); };
-  useEffect(() => { load(); }, []);
+  const load = async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
+    const data = await fetchReports();
+    setReports(data);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    // Load danh sách ngay khi mount; rule được tắt vì đây là fetch dữ liệu có chủ đích
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void load(false);
+  }, []);
 
   const handleStatus = async (id, status) => {
     setReports(reports.map(r => r.id === id ? { ...r, status } : r));

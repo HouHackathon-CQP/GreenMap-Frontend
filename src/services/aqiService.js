@@ -13,7 +13,7 @@ export const fetchLiveAQI = async () => {
     try {
       const parsed = JSON.parse(cached);
       if (now - parsed.timestamp < CACHE_TTL) return parsed.data;
-    } catch (e) { localStorage.removeItem(AQI_CACHE_KEY); }
+    } catch { localStorage.removeItem(AQI_CACHE_KEY); }
   }
 
   try {

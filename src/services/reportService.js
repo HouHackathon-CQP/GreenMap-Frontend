@@ -7,7 +7,7 @@ export const fetchReports = async (status = null) => {
         if(status) url += `&status=${status}`;
         const data = await apiFetch(url);
         return Array.isArray(data) ? data : [];
-    } catch (e) {
+    } catch {
         return MOCK_REPORTS;
     }
 };
@@ -18,7 +18,7 @@ export const updateReportStatus = async (id, status) => {
             method: 'PUT', 
             body: JSON.stringify({ status }) 
         });
-    } catch (e) {
+    } catch {
         return { success: true }; // Mock success
     }
 };

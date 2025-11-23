@@ -1,6 +1,6 @@
 // GreenMap-Frontend/src/App.jsx
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate, Outlet, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, Outlet } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Login from './pages/Login';
@@ -40,7 +40,6 @@ const MainLayout = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
 export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
 
   // Lắng nghe sự kiện Logout từ apiService (khi hết hạn token)
   useEffect(() => {

@@ -6,23 +6,18 @@ export async function apiFetch(endpoint, options = {}) {
   
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  try {
-    const response = await fetch(`${BASE_URL}${endpoint}`, { ...options, headers });
+  const response = await fetch(`${BASE_URL}${endpoint}`, { ...options, headers });
 
-    // Lỗi Auth -> Không logout tự động ở đây nữa để tránh loop, ném lỗi ra ngoài
-    if (response.status === 401) {
-      throw new Error("Unauthorized");
-    }
-
-    // Các lỗi Client/Server khác
-    if (!response.ok) {
-      throw new Error(`HTTP Error ${response.status}`);
-    }
-    
-    if (response.status === 204) return null;
-    return await response.json();
-  } catch (error) {
-    // Ném lỗi ra để từng Service quyết định dùng Mock Data hay không
-    throw error;
+  // Lỗi Auth -> Không logout tự động ở đây nữa để tránh loop, ném lỗi ra ngoài
+  if (response.status === 401) {
+    throw new Error("Unauthorized");
   }
+
+  // Các lỗi Client/Server khác
+  if (!response.ok) {
+    throw new Error(`HTTP Error ${response.status}`);
+  }
+
+  if (response.status === 204) return null;
+  return await response.json();
 }

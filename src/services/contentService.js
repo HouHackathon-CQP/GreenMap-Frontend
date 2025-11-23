@@ -78,7 +78,7 @@ export const fetchLocations = async (locationType = null) => {
     });
 
   } catch (error) {
-    console.warn("⚠️ Locations API Error. Using Mock.");
+    console.warn("⚠️ Locations API Error. Using Mock.", error);
     if (locationType) {
         return MOCK_LOCATIONS.filter(l => l.location_type === locationType);
     }

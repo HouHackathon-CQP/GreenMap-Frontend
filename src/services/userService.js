@@ -5,13 +5,16 @@ export const fetchUsers = async () => {
     try {
         const data = await apiFetch('users');
         return Array.isArray(data) ? data : MOCK_USERS;
-    } catch (e) {
+    } catch {
         return MOCK_USERS;
     }
 };
 
 export const toggleUserStatus = async (id, status) => {
     try {
-        return await apiFetch(`users/${id}/status`, { method: 'PUT' });
-    } catch (e) { return { success: true }; }
+        return await apiFetch(`users/${id}/status`, { 
+            method: 'PUT',
+            body: JSON.stringify({ status }),
+        });
+    } catch { return { success: true }; }
 };
