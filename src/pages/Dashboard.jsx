@@ -1,210 +1,236 @@
 import React, { useState, useEffect } from 'react';
-import { Database, CheckCircle, Clock, AlertCircle, Loader2 } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { Radio, Signal, Clock, AlertCircle, Loader2, X, MapPin, Activity, BarChart3 } from 'lucide-react';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import GreenMap from '../components/GreenMap'; 
+import { fetchLiveAQI } from '../services';
 
-import { fetchLiveAQI, fetchLocations } from '../apiService';
-
-// --- DỮ LIỆU GIẢ CHO BIỂU ĐỒ (API CHƯA CÓ) ĐƯỢC CHUYỂN VÀO ĐÂY ---
-const aqiTrendData = [
-  { name: '00:00', aqi: 45 }, { name: '03:00', aqi: 50 }, { name: '06:00', aqi: 55 },
-  { name: '09:00', aqi: 70 }, { name: '12:00', aqi: 65 }, { name: '15:00', aqi: 75 },
-  { name: '18:00', aqi: 85 }, { name: '21:00', aqi: 80 },
-];
-const areaStatsData = [
-  { name: 'Hoàn Kiếm', aqi: 85, noise: 70 }, { name: 'Đống Đa', aqi: 72, noise: 65 },
-  { name: 'Tây Hồ', aqi: 65, noise: 60 }, { name: 'Cầu Giấy', aqi: 78, noise: 72 },
-  { name: 'Hà Đông', aqi: 90, noise: 68 },
-];
-// --- ----------------------------------------------- ---
-
-
-// Hàm helper tô màu
-const getSensorStatusChip = (status) => {
-  let color = '';
-  switch (status) {
-    case 'Active':
-      color = 'bg-green-500/30 text-green-300';
-      break;
-    case 'Inactive':
-    default:
-      color = 'bg-gray-500/30 text-gray-300';
-  }
+// --- 1. MODAL CHI TIẾT ---
+const StationDetailModal = ({ station, onClose }) => {
+  if (!station) return null;
   return (
-    <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${color}`}>
-      {status}
-    </span>
-  );
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+        <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-xl p-6 relative">
+            <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white"><X/></button>
+            <h2 className="text-xl font-bold text-white mb-4">{station.name}</h2>
+            <div className="flex items-baseline gap-2">
+                <span className="text-5xl font-black text-green-400">{station.value}</span>
+                <span className="text-gray-400">{station.unit}</span>
+            </div>
+            <div className="mt-4 p-3 bg-gray-800 rounded text-sm text-gray-300">
+                <p>Toạ độ: {station.coordinates?.latitude.toFixed(4)}, {station.coordinates?.longitude.toFixed(4)}</p>
+                <p>Nguồn: {station.provider}</p>
+            </div>
+        </div>
+    </div>
+  )
+};
+
+// --- 2. HÀM HELPER ---
+const getAqiColor = (val) => {
+    if (val <= 50) return '#10b981';
+    if (val <= 100) return '#eab308';
+    if (val <= 150) return '#f97316';
+    return '#ef4444';
+};
+
+// Hàm tách tên Quận từ tên Trạm (Simple Logic)
+const detectDistrict = (stationName) => {
+    const name = stationName.toLowerCase();
+    const districts = [
+        "Hoàn Kiếm", "Đống Đa", "Ba Đình", "Hai Bà Trưng", 
+        "Hoàng Mai", "Thanh Xuân", "Long Biên", "Nam Từ Liêm", 
+        "Bắc Từ Liêm", "Tây Hồ", "Cầu Giấy", "Hà Đông", 
+        "Sơn Tây", "Ba Vì", "Phúc Thọ", "Đan Phượng", 
+        "Hoài Đức", "Quốc Oai", "Thạch Thất", "Chương Mỹ", 
+        "Thanh Oai", "Thường Tín", "Phú Xuyên", "Ứng Hòa", 
+        "Mỹ Đức", "Gia Lâm", "Đông Anh", "Sóc Sơn", "Mê Linh"
+    ];
+
+    for (let d of districts) {
+        if (name.includes(d.toLowerCase())) return d;
+    }
+    return "Khu vực khác"; // Nếu không tìm thấy tên quận trong tên trạm
 };
 
 export default function Dashboard() {
-  // 3. State cho dữ liệu KPI và Tình trạng
-  const [kpiData, setKpiData] = useState({
-    totalLocations: 0,
-    activeLocations: 0,
-    avgAqi: 0,
-    pendingReports: 0,
-  });
-  const [sensorStatusList, setSensorStatusList] = useState([]);
+  const [kpiData, setKpiData] = useState({ totalStations: 0, activeStations: 0, avgAqi: 0, pendingReports: 3 });
+  const [sensorList, setSensorList] = useState([]);
+  
+  // State dữ liệu Thống kê Quận
+  const [districtPollutionData, setDistrictPollutionData] = useState([]); 
+  
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedStation, setSelectedStation] = useState(null);
 
-  // 4. useEffect để gọi API
   useEffect(() => {
     const loadDashboardData = async () => {
       setIsLoading(true);
       try {
-        // Gọi song song 2 API
-        const [aqiResult, locationsResult] = await Promise.all([
-          fetchLiveAQI(),
-          fetchLocations(null) // Lấy tất cả locations (không lọc)
-        ]);
+        const aqiResult = await fetchLiveAQI();
+        
+        let totalAqi = 0, validReadings = 0, activeCount = 0;
+        const processedSensors = [];
+        
+        // Biến để tính trung bình theo quận
+        const districtStats = {}; // { "Hà Đông": { total: 150, count: 2 }, ... }
 
-        // Xử lý dữ liệu AQI
-        let totalAqi = 0;
-        let validReadings = 0;
-        const liveSensors = [];
-
-        if (aqiResult && aqiResult.data) {
+        if (aqiResult && Array.isArray(aqiResult.data)) {
           aqiResult.data.forEach(sensor => {
-            if (sensor.value !== null && sensor.value !== undefined) {
-              totalAqi += sensor.value;
-              validReadings++;
+            const val = Number(sensor.value);
+            const isValid = sensor.value !== null && !isNaN(val);
+
+            if (isValid) { 
+                totalAqi += val; 
+                validReadings++; 
+                activeCount++; 
+
+                // --- LOGIC GOM NHÓM THEO QUẬN ---
+                const districtName = detectDistrict(sensor.station_name || "");
+                if (!districtStats[districtName]) {
+                    districtStats[districtName] = { total: 0, count: 0 };
+                }
+                districtStats[districtName].total += val;
+                districtStats[districtName].count += 1;
             }
-            liveSensors.push({
-              id: sensor.sensor_id,
-              name: sensor.station_name,
-              value: sensor.value,
-              status: (sensor.value !== null) ? 'Active' : 'Inactive'
+
+            processedSensors.push({
+              id: sensor.sensor_id || Math.random(),
+              name: sensor.station_name || "Trạm chưa đặt tên",
+              value: isValid ? val : null,
+              unit: sensor.unit,
+              status: isValid ? 'Online' : 'Offline',
+              coordinates: sensor.coordinates,
+              provider: sensor.provider_name
             });
           });
         }
 
-        // Xử lý dữ liệu Locations (Tổng Địa điểm / Hoạt động)
-        let totalLocations = 0;
-        let activeLocations = 0;
-        if (locationsResult) {
-          totalLocations = locationsResult.length;
-          activeLocations = locationsResult.filter(loc => loc.is_active).length;
-        }
+        // --- TÍNH TOÁN DỮ LIỆU BIỂU ĐỒ QUẬN ---
+        const chartData = Object.keys(districtStats).map(key => ({
+            name: key,
+            aqi: Math.round(districtStats[key].total / districtStats[key].count) // Tính trung bình cộng
+        }));
 
-        // Tính toán
-        const avgAqi = (validReadings > 0) ? (totalAqi / validReadings) : 0;
-        
-        // Cập nhật State
-        setKpiData({
-          totalLocations: totalLocations,
-          activeLocations: activeLocations,
-          avgAqi: Math.round(avgAqi),
-          pendingReports: 3 // Cập nhật (vì userReportsData nội bộ của ReportApproval có 3 item)
+        // Sắp xếp từ cao xuống thấp và lấy Top 5 quận ô nhiễm nhất
+        chartData.sort((a, b) => b.aqi - a.aqi);
+        setDistrictPollutionData(chartData.slice(0, 6));
+
+        // Tính KPI toàn thành phố
+        const avg = (validReadings > 0) ? (totalAqi / validReadings) : 0;
+        setKpiData({ 
+            totalStations: processedSensors.length, 
+            activeStations: activeCount, 
+            avgAqi: Math.round(avg), 
+            pendingReports: 3 
         });
-        
-        // Chỉ hiển thị 5 sensor đầu tiên trong danh sách
-        setSensorStatusList(liveSensors.slice(0, 5));
+        setSensorList(processedSensors);
 
-      } catch (error) {
-        console.error("Lỗi khi tải dữ liệu Dashboard:", error);
-      } finally {
-        setIsLoading(false);
-      }
+      } catch (error) { console.error(error); } 
+      finally { setIsLoading(false); }
     };
-
     loadDashboardData();
-  }, []); // Chạy 1 lần khi mount
+  }, []);
 
-  // 5. Render Thẻ KPI
+  // Dữ liệu giả cho biểu đồ Trend (vì API chưa có history)
+  const aqiTrendData = [
+    { name: '00:00', aqi: kpiData.avgAqi * 0.8 },
+    { name: '06:00', aqi: kpiData.avgAqi * 0.9 },
+    { name: '12:00', aqi: kpiData.avgAqi * 1.1 },
+    { name: '18:00', aqi: kpiData.avgAqi },
+  ];
+
   const kpiCards = [
-    { title: 'Tổng Địa điểm', value: kpiData.totalLocations, icon: Database, color: 'text-blue-400' },
-    { title: 'Đang Hoạt động', value: kpiData.activeLocations, icon: CheckCircle, color: 'text-green-400' },
-    { title: 'Báo cáo chờ duyệt', value: kpiData.pendingReports, icon: Clock, color: 'text-yellow-400' },
-    { title: 'AQI (PM2.5) TB', value: kpiData.avgAqi, icon: AlertCircle, color: 'text-orange-400' },
+    { title: 'Tổng Trạm Đo', value: kpiData.totalStations, icon: Radio, color: 'text-blue-400', bgIcon: 'bg-blue-500/20' },
+    { title: 'Đang Online', value: kpiData.activeStations, icon: Signal, color: 'text-green-400', bgIcon: 'bg-green-500/20' },
+    { title: 'Cảnh báo', value: kpiData.pendingReports, icon: Clock, color: 'text-yellow-400', bgIcon: 'bg-yellow-500/20' },
+    { title: 'PM2.5 Toàn TP', value: kpiData.avgAqi, icon: AlertCircle, color: 'text-orange-400', bgIcon: 'bg-orange-500/20' },
   ];
 
   return (
-    <div className="space-y-6">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+    <div className="space-y-6 pb-10">
+      <StationDetailModal station={selectedStation} onClose={() => setSelectedStation(null)} />
+
+      {/* KPI */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {kpiCards.map((kpi) => (
-          <div key={kpi.title} className="bg-gray-800/60 p-4 rounded-xl shadow-lg border border-gray-700/50 flex items-center space-x-4">
-            <div className={`p-3 rounded-full bg-gray-700 ${kpi.color}`}>
-              <kpi.icon size={24} />
-            </div>
+          <div key={kpi.title} className="bg-gray-900 p-5 rounded-2xl border border-gray-800 flex items-center space-x-4">
+            <div className={`p-3.5 rounded-xl ${kpi.bgIcon} ${kpi.color}`}><kpi.icon size={26} /></div>
             <div>
-              <p className="text-sm text-gray-400">{kpi.title}</p>
-              {isLoading ? (
-                <Loader2 size={20} className="animate-spin mt-1" />
-              ) : (
-                <p className="text-2xl font-bold">{kpi.value}</p>
-              )}
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-400">{kpi.title}</p>
+              {isLoading ? <Loader2 size={24} className="animate-spin mt-1 text-gray-500" /> : <p className="text-3xl font-black text-white mt-1">{kpi.value}</p>}
             </div>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Map Section (GreenMap tự gọi API của nó) */}
-        <div className="lg:col-span-2 bg-gray-800/60 rounded-xl shadow-lg border border-gray-700/50 overflow-hidden flex flex-col">
-          <div className="p-3 border-b border-gray-700/50 bg-gray-800/80">
-            <h3 className="text-sm font-semibold text-green-300">Bản đồ Trạm đo AQI Thời gian thực</h3>
-          </div>
-          <div className="h-[400px] w-full relative">
-            <GreenMap /> 
-          </div>
+        {/* Map */}
+        <div className="lg:col-span-2 bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden h-[500px] relative">
+            <div className="absolute top-0 left-0 right-0 p-4 bg-gray-900/80 backdrop-blur z-10 border-b border-gray-800">
+                <h3 className="font-bold text-white">Bản đồ Trạm Quan Trắc</h3>
+            </div>
+            <div className="h-full w-full"><GreenMap /></div>
         </div>
 
-        {/* 6. Tình trạng Cảm biến (Từ API) */}
-        <div className="bg-gray-800/60 p-4 rounded-xl shadow-lg border border-gray-700/50">
-          <h3 className="text-lg font-semibold mb-4 text-green-300">Tình trạng Cảm biến (Live)</h3>
-          <ul className="space-y-3 h-[400px] overflow-y-auto pr-2">
-            {isLoading ? (
-              <div className="flex justify-center items-center h-full">
-                <Loader2 size={30} className="animate-spin text-gray-500" />
-              </div>
-            ) : (
-              sensorStatusList.map((sensor) => (
-                <li key={sensor.id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
-                  <div>
-                    <p className="font-semibold text-gray-200 truncate w-40" title={sensor.name}>{sensor.name}</p>
-                    <p className="text-xs text-gray-400 mt-1">PM2.5: {sensor.value ?? 'N/A'}</p>
-                  </div>
-                  {getSensorStatusChip(sensor.status)}
-                </li>
-              ))
-            )}
-          </ul>
+        {/* List */}
+        <div className="bg-gray-900 rounded-2xl border border-gray-800 h-[500px] flex flex-col p-4">
+            <h3 className="font-bold text-white mb-4">Danh sách Trạm ({sensorList.length})</h3>
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
+                <ul className="space-y-2">
+                    {sensorList.map((s, i) => (
+                        <li key={i} onClick={() => setSelectedStation(s)} className="flex justify-between p-3 bg-gray-800/50 rounded cursor-pointer hover:bg-gray-800 border border-transparent hover:border-green-500/50">
+                            <span className="text-sm text-gray-300 truncate w-32">{s.name}</span>
+                            <span className={`font-bold ${s.value > 100 ? 'text-red-400' : 'text-green-400'}`}>{s.value ?? '--'}</span>
+                        </li>
+                    ))}
+                </ul>
+            </div>
         </div>
       </div>
 
-       {/* 7. Charts (Vẫn dùng mock data nội bộ) */}
-       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-gray-800/60 p-4 rounded-xl shadow-lg border border-gray-700/50">
-          <h3 className="text-lg font-semibold mb-4 text-green-300">Xu hướng AQI (24h) - (Dữ liệu giả)</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            {/* Sử dụng biến 'aqiTrendData' nội bộ */}
+      {/* CHARTS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Trend */}
+        <div className="bg-gray-900 p-5 rounded-2xl border border-gray-800">
+          <h3 className="font-bold text-white mb-6 flex items-center"><Activity size={18} className="mr-2 text-orange-500"/> Xu hướng PM2.5 (24h)</h3>
+          <ResponsiveContainer width="100%" height={250}>
             <LineChart data={aqiTrendData}> 
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
-              <XAxis dataKey="name" stroke="#9CA3AF" tickLine={false} axisLine={false} dy={10} />
-              <YAxis stroke="#9CA3AF" tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px', color: '#fff' }} itemStyle={{ color: '#fff' }} cursor={{stroke: '#4B5563', strokeWidth: 2}} />
-              <Legend wrapperStyle={{ paddingTop: '20px' }} />
-              <Line type="monotone" dataKey="aqi" name="Chỉ số AQI" stroke="#F97316" strokeWidth={3} dot={{r: 4, fill: '#F97316'}} activeDot={{ r: 6 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
+              <XAxis dataKey="name" stroke="#9ca3af" tickLine={false} axisLine={false} />
+              <YAxis stroke="#9ca3af" tickLine={false} axisLine={false} />
+              <Tooltip contentStyle={{ backgroundColor: '#111827', border: 'none', borderRadius: '8px', color: '#fff' }} />
+              <Line type="monotone" dataKey="aqi" stroke="#f97316" strokeWidth={3} dot={{r:4}} />
             </LineChart>
           </ResponsiveContainer>
         </div>
-        <div className="bg-gray-800/60 p-4 rounded-xl shadow-lg border border-gray-700/50">
-          <h3 className="text-lg font-semibold mb-4 text-green-300">Thống kê theo Khu vực - (Dữ liệu giả)</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            {/* Sử dụng biến 'areaStatsData' nội bộ */}
-            <BarChart data={areaStatsData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
-              <XAxis dataKey="name" stroke="#9CA3AF" tickLine={false} axisLine={false} dy={10} />
-              <YAxis stroke="#9CA3AF" tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px', color: '#fff' }} cursor={{fill: '#374151', opacity: 0.4}} />
-              <Legend wrapperStyle={{ paddingTop: '20px' }} />
-              <Bar dataKey="aqi" name="AQI" fill="#F97316" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="noise" name="Tiếng ồn (dB)" fill="#3B82F6" />
-            </BarChart>
-          </ResponsiveContainer>
+
+        {/* --- BIỂU ĐỒ PHÂN TÍCH THEO QUẬN (MỚI) --- */}
+        <div className="bg-gray-900 p-5 rounded-2xl border border-gray-800">
+          <h3 className="font-bold text-white mb-6 flex items-center"><BarChart3 size={18} className="mr-2 text-blue-500"/> Top Quận/Huyện Ô nhiễm TB</h3>
+          
+          {districtPollutionData.length === 0 ? (
+             <div className="flex h-[250px] items-center justify-center text-gray-500">Chưa có đủ dữ liệu phân tích.</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={districtPollutionData} layout="vertical" margin={{left: 0, right: 20}}> 
+                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" horizontal={false} />
+                <XAxis type="number" stroke="#9ca3af" hide />
+                <YAxis dataKey="name" type="category" stroke="#9ca3af" tickLine={false} axisLine={false} width={100} tick={{fontSize: 12, fill: '#d1d5db'}} />
+                <Tooltip 
+                    cursor={{fill: '#374151', opacity: 0.2}} 
+                    contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', color: '#fff' }} 
+                />
+                <Bar dataKey="aqi" radius={[0, 4, 4, 0]} barSize={20}>
+                    {districtPollutionData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={getAqiColor(entry.aqi)} />
+                    ))}
+                </Bar>
+                </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
+
       </div>
     </div>
   );

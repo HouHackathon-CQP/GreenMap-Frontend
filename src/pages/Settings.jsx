@@ -1,3 +1,4 @@
+// GreenMap-Frontend/src/pages/Settings.jsx
 import React from 'react';
 import { Save, Lock, Bell, Globe } from 'lucide-react';
 
