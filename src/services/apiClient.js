@@ -1,4 +1,4 @@
-const BASE_URL = 'http://160.250.5.180:8001/';
+const BASE_URL = import.meta.env.VITE_BASE_URL || 'https://backend.myhou.io.vn/';
 
 export async function apiFetch(endpoint, options = {}) {
   const token = localStorage.getItem('access_token');
