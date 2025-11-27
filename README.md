@@ -29,11 +29,11 @@
 
 <h2 id="technologies">💻 Công nghệ sử dụng</h2>
 
-- Core: <a href="https://react.dev/">ReactJS</a> (sử dụng <a href="https://vite.dev/">Vite</a> để build siêu tốc)
-- Styling: <a href="https://tailwindcss.com/">TailwindCSS</a> - Thiết kế giao diện nhanh và tùy biến cao.
-- Maps: <a href="https://maplibre.org/">MapLibre GL JS</a> - Hiển thị bản đồ vector và Heatmap mượt mà.
-- Charts: <a href="https://recharts.github.io/">Recharts</a> - Vẽ biểu đồ thống kê dữ liệu trực quan.
-- Icons: <a href="https://lucide.dev/">Lucide React</a> - Bộ icon nhẹ và hiện đại.
+- Core: <a href="https://react.dev/">ReactJS</a> sử dụng <a href="https://vite.dev/">Vite</a>
+- Styling: <a href="https://tailwindcss.com/">TailwindCSS</a>
+- Maps: <a href="https://maplibre.org/">MapLibre GL JS</a>
+- Charts: <a href="https://recharts.github.io/">Recharts</a>
+- Icons: <a href="https://lucide.dev/">Lucide React</a>
 - Data Fetching: <a href="https://axios-http.com/docs/intro">Axios</a>  / <a href="https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API">Fetch API</a> với cấu hình Proxy.
 
 <h2 id="started">🚀 Hướng dẫn cài đặt</h2>
