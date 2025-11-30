@@ -1,3 +1,4 @@
+// src/pages/NewsFeed.jsx
 import React, { useEffect, useState } from 'react';
 import { fetchNews } from '../services/newsService';
 import { Loader2, Calendar, ExternalLink, Newspaper, Search, Filter, Flame, ChevronRight, Globe } from 'lucide-react';

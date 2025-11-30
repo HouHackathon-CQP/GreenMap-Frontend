@@ -1,8 +1,10 @@
-// GreenMap-Frontend/src/pages/Login.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // <-- Import
+import { useNavigate } from 'react-router-dom'; 
 import { loginUser } from '../services';
-import { Leaf, Loader2, Lock, User } from 'lucide-react';
+import { Loader2, Lock, User } from 'lucide-react';
+
+// --- IMPORT LOGO ---
+import logoImg from '../assets/logo.png'; 
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -10,7 +12,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const navigate = useNavigate(); // Hook điều hướng
+  const navigate = useNavigate(); 
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -18,53 +20,104 @@ export default function Login() {
     setError('');
 
     try {
+      // Gọi API đăng nhập
       const data = await loginUser(username, password);
       
       if (data && data.access_token) {
+        // 1. Lưu Token
         localStorage.setItem('access_token', data.access_token);
-        // Chuyển hướng ngay lập tức sang Dashboard
+        
+        // 2. Lưu thông tin người dùng (Giả lập từ username)
+        const userInfo = {
+            name: username === 'admin' ? 'Quản Trị Viên' : username,
+            email: `${username}@greenmap.vn`, // Email giả lập để hiển thị profile cho đẹp
+            avatar: username.charAt(0).toUpperCase()
+        };
+        localStorage.setItem('user_info', JSON.stringify(userInfo));
+
+        // 3. Chuyển hướng
         navigate('/dashboard', { replace: true });
       } else {
-        setError('Token không hợp lệ.');
+        setError('Token không hợp lệ hoặc lỗi server.');
       }
-    } catch {
-      setError('Đăng nhập thất bại. (Thử: admin / 123456)');
+    } catch (err) {
+      console.error(err);
+      setError('Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ... (Phần giao diện return giữ nguyên như cũ, không thay đổi)
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
       <div className="bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-700">
+        
+        {/* LOGO SECTION */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/20 text-green-400 mb-4">
-            <Leaf size={32} />
+          <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-emerald-500/10 mb-4 p-4 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+            <img 
+              src={logoImg} 
+              alt="GreenMap Logo" 
+              className="w-full h-full object-contain" 
+            />
           </div>
-          <h1 className="text-2xl font-bold text-white">GreenMap Portal</h1>
-          <p className="text-gray-400 text-sm mt-2">Đăng nhập dành cho Quản trị viên</p>
+          <h1 className="text-3xl font-black text-white tracking-tight">GreenMap Admin</h1>
+          <p className="text-gray-400 text-sm mt-2 font-medium">Hệ thống Quản trị Bản đồ Xanh</p>
         </div>
 
-        {error && <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-3 rounded mb-6 text-center text-sm">{error}</div>}
+        {/* ERROR MESSAGE */}
+        {error && (
+            <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-3 rounded-lg mb-6 text-center text-sm font-medium flex items-center justify-center animate-in fade-in slide-in-from-top-1">
+                {error}
+            </div>
+        )}
 
-        <form onSubmit={handleLogin} className="space-y-6">
+        {/* LOGIN FORM */}
+        <form onSubmit={handleLogin} className="space-y-5">
           <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">Tài khoản</label>
             <div className="relative">
-              <User className="absolute left-3 top-3 text-gray-500" size={18} />
-              <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-lg py-2.5 pl-10 pr-4 text-white focus:ring-green-500 outline-none" placeholder="Username (admin)" required />
+              <User className="absolute left-3.5 top-3 text-gray-500" size={18} />
+              <input 
+                type="text" 
+                value={username} 
+                onChange={(e) => setUsername(e.target.value)} 
+                className="w-full bg-gray-900/50 border border-gray-600 rounded-xl py-2.5 pl-10 pr-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all placeholder-gray-600" 
+                placeholder="Nhập username" 
+                required 
+              />
             </div>
           </div>
+          
           <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">Mật khẩu</label>
             <div className="relative">
-              <Lock className="absolute left-3 top-3 text-gray-500" size={18} />
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-lg py-2.5 pl-10 pr-4 text-white focus:ring-green-500 outline-none" placeholder="Password (123456)" required />
+              <Lock className="absolute left-3.5 top-3 text-gray-500" size={18} />
+              <input 
+                type="password" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                className="w-full bg-gray-900/50 border border-gray-600 rounded-xl py-2.5 pl-10 pr-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all placeholder-gray-600" 
+                placeholder="••••••••" 
+                required 
+              />
             </div>
           </div>
-          <button type="submit" disabled={isLoading} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg flex items-center justify-center shadow-lg">
-            {isLoading ? <Loader2 className="animate-spin mr-2" /> : 'Đăng Nhập'}
+
+          <button 
+            type="submit" 
+            disabled={isLoading} 
+            className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-3 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-900/20 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed mt-4"
+          >
+            {isLoading ? <Loader2 className="animate-spin mr-2" /> : 'Đăng Nhập Hệ Thống'}
           </button>
         </form>
+
+        <div className="mt-6 text-center">
+            <p className="text-xs text-gray-600">
+                Quên mật khẩu? <span className="text-emerald-500 cursor-pointer hover:underline">Liên hệ kỹ thuật</span>
+            </p>
+        </div>
       </div>
     </div>
   );

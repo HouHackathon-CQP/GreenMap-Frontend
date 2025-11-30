@@ -1,3 +1,4 @@
+// src/services/newsService.js
 import { apiFetch } from './apiClient';
 
 export const fetchNews = async () => {
