@@ -1,4 +1,4 @@
-// src/services/index.js
+// src/apiService.js
 
 export * from './services/authService';
 export * from './services/aqiService';

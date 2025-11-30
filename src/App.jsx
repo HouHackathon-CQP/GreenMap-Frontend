@@ -1,6 +1,5 @@
-// GreenMap-Frontend/src/App.jsx
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate, Outlet, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, Outlet } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Login from './pages/Login';
@@ -14,6 +13,9 @@ import Settings from './pages/Settings';
 import AirQualityMap from './pages/AirQualityMap';
 import NewsFeed from './pages/NewsFeed';
 import UserManagement from './pages/UserManagement';
+
+// Import thêm hàm logoutUser
+import { logoutUser } from './services'; 
 
 const ProtectedRoute = () => {
   const token = localStorage.getItem('access_token');
@@ -38,6 +40,7 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
+  // Tự động logout nếu có sự kiện từ nơi khác (optional)
   useEffect(() => {
     const handleAutoLogout = () => {
       localStorage.removeItem('access_token');
@@ -47,9 +50,20 @@ export default function App() {
     return () => window.removeEventListener('auth:logout', handleAutoLogout);
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    navigate('/login');
+  // --- HÀM XỬ LÝ LOGOUT (ĐÃ CẬP NHẬT) ---
+  const handleLogout = async () => {
+    try {
+        // 1. Gọi API để báo Backend hủy token/session
+        await logoutUser();
+    } catch (e) {
+        console.error("Lỗi khi gọi API logout:", e);
+    } finally {
+        // 2. Bất kể API thành công hay thất bại, luôn xóa token ở trình duyệt
+        localStorage.removeItem('access_token');
+        
+        // 3. Chuyển hướng về trang đăng nhập
+        navigate('/login');
+    }
   };
 
   return (
@@ -63,7 +77,6 @@ export default function App() {
           <Route path="/map" element={<AirQualityMap />} />
           <Route path="/news" element={<NewsFeed />} />
           
-          {/* --- SỬ DỤNG KEY ĐỂ RESET STATE KHI CHUYỂN TRANG --- */}
           <Route path="/parks" element={<ContentManagement key="parks" title="Quản lý Công viên" locationType="PUBLIC_PARK" />} />
           <Route path="/charging" element={<ContentManagement key="charging" title="Quản lý Trạm Sạc" locationType="CHARGING_STATION" />} />
           <Route path="/bikes" element={<ContentManagement key="bikes" title="Quản lý Xe đạp" locationType="BICYCLE_RENTAL" />} />

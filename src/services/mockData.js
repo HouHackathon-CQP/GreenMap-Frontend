@@ -1,3 +1,4 @@
+// src/services/mockData.js
 export const FALLBACK_AQI_DATA = {
   source: "Fallback Data",
   data: [
