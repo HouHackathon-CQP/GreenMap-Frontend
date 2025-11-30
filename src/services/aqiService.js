@@ -1,3 +1,4 @@
+// src/services/aqiService.js
 import { apiFetch } from './apiClient';
 import { FALLBACK_AQI_DATA } from './mockData';
 import { pm25ToAQI } from '../utils/aqiCalculator'; 

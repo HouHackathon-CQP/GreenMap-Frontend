@@ -1,108 +1,89 @@
 import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { fetchLiveAQI, fetchTrafficMap, fetchTrafficLive } from '../services'; // Đảm bảo đường dẫn đúng
-import { Loader2 } from 'lucide-react';
+import { fetchLiveAQI } from '../services'; // Bỏ fetchTraffic
+import { Loader2, Navigation } from 'lucide-react';
 
 const GreenMap = ({ onStationSelect }) => {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
+  const userMarkerRef = useRef(null);
   
   const [sensors, setSensors] = useState([]);
-  const [trafficStatus, setTrafficStatus] = useState({}); // { "edge_1": "red", ... }
   const [isLoading, setIsLoading] = useState(true);
   const [isMapReady, setIsMapReady] = useState(false);
 
-  // --- 1. LẤY DỮ LIỆU TỪ API ---
+  // --- 1. LẤY DỮ LIỆU AQI ---
   useEffect(() => {
-    // A. Lấy AQI (1 lần lúc đầu)
     fetchLiveAQI()
       .then(data => {
-        if (data && data.data) setSensors(data.data);
+        const sensorList = data.data || (Array.isArray(data) ? data : []);
+        setSensors(sensorList);
       })
       .finally(() => setIsLoading(false));
-
-    // B. Lấy Traffic Status (Loop mỗi 2 giây)
-    const interval = setInterval(() => {
-      fetchTrafficLive().then(res => {
-        if (res && res.status) {
-          // console.log("🚦 Traffic update:", Object.keys(res.status).length, "segments");
-          setTrafficStatus(res.status);
-        }
-      });
-    }, 2000);
-
-    return () => clearInterval(interval);
   }, []);
 
-  // --- 2. KHỞI TẠO BẢN ĐỒ ---
+  // --- HÀM ĐỊNH VỊ USER ---
+  const handleLocateUser = () => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    if (!navigator.geolocation) { return; }
+
+    const options = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
+
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            const { latitude, longitude, accuracy } = position.coords;
+            const userCoords = [longitude, latitude];
+
+            map.flyTo({ center: userCoords, zoom: 15, speed: 1.5 });
+
+            const el = document.createElement('div');
+            el.className = 'user-location-marker';
+            el.title = `Vị trí của bạn (Sai số ~${Math.round(accuracy)}m)`;
+            el.innerHTML = `
+                <span class="relative flex h-4 w-4">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-4 w-4 bg-blue-500 border-2 border-white shadow-sm"></span>
+                </span>
+            `;
+
+            if (userMarkerRef.current) userMarkerRef.current.remove();
+            userMarkerRef.current = new maplibregl.Marker({ element: el }).setLngLat(userCoords).addTo(map);
+        },
+        (error) => console.warn("Lỗi định vị:", error.message),
+        options
+    );
+  };
+
+  // --- 2. KHỞI TẠO MAP ---
   useEffect(() => {
     if (mapInstanceRef.current) return;
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
       style: 'https://tiles.openfreemap.org/styles/bright',
-      center: [105.80, 21.00], // Tọa độ trung tâm khu vực mô phỏng
-      zoom: 13,
-      pitch: 0,
-      bearing: 0,
+      center: [105.80, 21.02],
+      zoom: 12.5,
+      pitch: 60,
+      bearing: -10,
       antialias: true,
     });
     mapInstanceRef.current = map;
-
-    // Thêm điều khiển zoom/xoay
-    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
 
     map.on('load', async () => {
       map.resize();
+      handleLocateUser();
 
-      // [FIX] Xử lý lỗi thiếu icon: Tạo icon trong suốt
       map.on('styleimagemissing', (e) => {
-        const id = e.id;
-        if (!map.hasImage(id)) {
-          const pixel = new Uint8Array(4); // [0,0,0,0] -> Trong suốt
-          const imageData = { width: 1, height: 1, data: pixel };
-          map.addImage(id, imageData);
+        if (!map.hasImage(e.id)) {
+          map.addImage(e.id, { width: 1, height: 1, data: new Uint8Array(4) });
         }
       });
 
-      // --- A. LAYER GIAO THÔNG (Traffic) ---
-      try {
-        const trafficData = await fetchTrafficMap(); // Gọi API /traffic/segments
-        
-        // Thêm nguồn dữ liệu đường
-        map.addSource('traffic-source', {
-          type: 'geojson',
-          data: trafficData || { type: 'FeatureCollection', features: [] },
-          promoteId: 'id' // <--- QUAN TRỌNG: Ép kiểu ID thành chuỗi để khớp với API Live
-        });
-
-        // Vẽ các đoạn đường
-        map.addLayer({
-          id: 'traffic-lines',
-          type: 'line',
-          source: 'traffic-source',
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round'
-          },
-          paint: {
-            'line-width': 4,
-            // Logic tô màu dựa trên Feature State
-            'line-color': [
-              'case',
-              ['boolean', ['feature-state', 'isRed'], false], '#ef4444',   // Đỏ (Tắc)
-              ['boolean', ['feature-state', 'isOrange'], false], '#f97316', // Cam (Đông)
-              '#22c55e' // Xanh (Thông thoáng - Mặc định)
-            ],
-            'line-opacity': 0.8
-          }
-        });
-      } catch (error) {
-        console.error("Lỗi tải bản đồ giao thông:", error);
-      }
-
-      // --- B. LAYER AQI (Points) ---
+      // --- LAYER AQI ---
       if (!map.getSource('aqi-sensors')) {
         map.addSource('aqi-sensors', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       }
@@ -113,35 +94,29 @@ const GreenMap = ({ onStationSelect }) => {
           type: 'circle',
           source: 'aqi-sensors',
           paint: {
-            'circle-radius': 8,
-            'circle-stroke-width': 1.5,
+            'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 6, 14, 12],
+            'circle-stroke-width': 2,
             'circle-stroke-color': '#ffffff',
             'circle-color': [
-              'step', ['get', 'value'],
-              '#9ca3af', 0,      // Xám (No Data)
-              '#10b981', 50,     // Xanh (Tốt)
-              '#eab308', 100,    // Vàng (TB)
-              '#f97316', 150,    // Cam (Kém)
-              '#ef4444', 300,    // Đỏ (Xấu)
-              '#7e0023'          // Tím (Nguy hại)
-            ]
+              'step', ['get', 'value'], '#9ca3af', 0, '#10b981', 50, '#eab308', 100, '#f97316', 150, '#ef4444', 300, '#7e0023'
+            ],
+            'circle-pitch-alignment': 'viewport' 
           }
         });
       }
 
-      // Sự kiện Click vào điểm AQI
       map.on('click', 'aqi-points', (e) => {
+        e.preventDefault();
         if (onStationSelect && e.features.length > 0) {
-          const props = e.features[0].properties;
-          const coords = e.features[0].geometry.coordinates;
+          const feature = e.features[0];
           onStationSelect({
-            ...props,
-            coordinates: { longitude: coords[0], latitude: coords[1] }
+            ...feature.properties,
+            coordinates: { longitude: feature.geometry.coordinates[0], latitude: feature.geometry.coordinates[1] }
           });
+          map.flyTo({ center: feature.geometry.coordinates, zoom: 14, pitch: 60, speed: 1.2 });
         }
       });
 
-      // Hiệu ứng con trỏ chuột
       map.on('mouseenter', 'aqi-points', () => map.getCanvas().style.cursor = 'pointer');
       map.on('mouseleave', 'aqi-points', () => map.getCanvas().style.cursor = '');
 
@@ -156,102 +131,36 @@ const GreenMap = ({ onStationSelect }) => {
 
     if (sensors.length > 0) {
       const validSensors = sensors.filter(s => s.coordinates?.longitude && s.coordinates?.latitude);
-      
       const geojsonData = {
         type: 'FeatureCollection',
         features: validSensors.map(s => ({
           type: 'Feature',
           geometry: { type: 'Point', coordinates: [s.coordinates.longitude, s.coordinates.latitude] },
           properties: {
-            id: s.sensor_id,
-            name: s.station_name,
-            value: Math.round(Number(s.value) || 0),
-            unit: s.unit,
-            provider: s.provider_name,
+            id: s.sensor_id, station_name: s.station_name, value: Math.round(Number(s.value) || 0),
+            unit: s.unit || 'AQI', provider: s.provider || 'N/A',
+            temperature: s.temperature || '--', humidity: s.humidity || '--', wind_speed: s.wind_speed || '--',
             status: 'Online'
           }
         }))
       };
-      
       map.getSource('aqi-sensors').setData(geojsonData);
     }
   }, [sensors, isMapReady]);
 
-  // --- 4. CẬP NHẬT TRẠNG THÁI GIAO THÔNG (Logic Retry) ---
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!isMapReady || !map) return;
-
-    // Hàm đệ quy thử lại nếu map chưa load xong source
-    const applyColors = (retryCount = 0) => {
-        // Kiểm tra Source tồn tại
-        if (!map.getSource('traffic-source')) {
-            if (retryCount < 20) setTimeout(() => applyColors(retryCount + 1), 500);
-            return;
-        }
-
-        // Kiểm tra Source đã load xong data chưa (Quan trọng với file lớn)
-        if (!map.isSourceLoaded('traffic-source')) {
-            if (retryCount < 40) { // Thử lại trong 20s
-                // console.log(`⏳ Đợi map index... (${retryCount})`);
-                setTimeout(() => applyColors(retryCount + 1), 500);
-            }
-            return;
-        }
-
-        // Bắt đầu tô màu
-        if (!trafficStatus || typeof trafficStatus !== 'object') return;
-        const segmentIds = Object.keys(trafficStatus);
-        if (segmentIds.length === 0) return;
-
-        // Dùng requestAnimationFrame để mượt UI
-        requestAnimationFrame(() => {
-            segmentIds.forEach((rawId) => {
-                const segmentId = String(rawId); // Ép kiểu String
-                const color = trafficStatus[rawId];
-                if (!color) return;
-
-                try {
-                    // Xóa trạng thái cũ
-                    map.removeFeatureState({ source: 'traffic-source', id: segmentId });
-
-                    // Set trạng thái mới
-                    if (color === 'red') {
-                        map.setFeatureState({ source: 'traffic-source', id: segmentId }, { isRed: true });
-                    } else if (color === 'orange') {
-                        map.setFeatureState({ source: 'traffic-source', id: segmentId }, { isOrange: true });
-                    }
-                } catch (e) {
-                    // Bỏ qua lỗi nếu ID không tìm thấy
-                }
-            });
-            // Ép vẽ lại
-            map.triggerRepaint();
-        });
-    };
-
-    applyColors();
-
-  }, [trafficStatus, isMapReady]);
-
   return (
     <div className="relative w-full h-full rounded-lg overflow-hidden bg-gray-900">
       <div ref={mapContainerRef} className="absolute top-0 left-0 w-full h-full" />
-      
-      {/* Loading Overlay */}
+      <div className="absolute bottom-6 right-4 z-10">
+          <button onClick={handleLocateUser} className="bg-gray-800 text-white p-2.5 rounded-full shadow-lg border border-gray-700 hover:bg-gray-700 transition-colors" title="Vị trí của tôi">
+              <Navigation size={20} className="text-blue-500 fill-blue-500/20"/>
+          </button>
+      </div>
       {isLoading && (
         <div className="absolute top-3 right-3 z-10 bg-black/60 backdrop-blur text-emerald-400 px-3 py-1.5 rounded-lg shadow-lg flex items-center text-xs font-bold">
-          <Loader2 className="animate-spin mr-2" size={14}/> ĐANG TẢI DỮ LIỆU...
+          <Loader2 className="animate-spin mr-2" size={14}/> ĐANG TẢI...
         </div>
       )}
-
-      {/* Legend (Chú giải) */}
-      <div className="absolute bottom-5 left-5 z-10 bg-white/90 p-3 rounded shadow text-xs text-gray-800">
-        <div className="font-bold mb-2">Trạng thái giao thông</div>
-        <div className="flex items-center mb-1"><span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span> Thông thoáng</div>
-        <div className="flex items-center mb-1"><span className="w-3 h-3 bg-orange-500 rounded-full mr-2"></span> Đông chậm</div>
-        <div className="flex items-center"><span className="w-3 h-3 bg-red-500 rounded-full mr-2"></span> Tắc đường</div>
-      </div>
     </div>
   );
 };

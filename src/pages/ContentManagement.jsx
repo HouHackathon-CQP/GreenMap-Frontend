@@ -1,3 +1,4 @@
+// src/pages/ContentManagement.jsx
 import React, { useState, useEffect } from 'react';
 import { fetchLocations, createLocation, updateLocation, deleteLocation } from '../services'; 
 import { Loader2, Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, X, Save, AlertTriangle, MapPin, Filter, LayoutList } from 'lucide-react';

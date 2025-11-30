@@ -1,18 +1,22 @@
 // src/services/apiClient.js
 
-// 1. Lấy URL từ biến môi trường
+// Lấy URL từ biến môi trường
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const apiFetch = async (endpoint, options = {}) => {
-  // Ghép chuỗi: "http://160...:8001" + "/" + "locations"
-  const url = `${BASE_URL}/${endpoint}`;
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+  const url = `${BASE_URL}/${cleanEndpoint}`;
   
-  console.log(`🌐 Calling Direct API: ${url}`); 
-
+  // --- BẮT ĐẦU SỬA: Tự động lấy Token ---
+  const token = localStorage.getItem('access_token');
+  
   const headers = {
     'Content-Type': 'application/json',
+    // Nếu có token, tự động thêm vào Header Authorization
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     ...options.headers,
   };
+  // --------------------------------------
 
   const config = {
     ...options,
@@ -22,12 +26,19 @@ export const apiFetch = async (endpoint, options = {}) => {
   try {
     const response = await fetch(url, config);
     
+    // Nếu gặp lỗi 401 (Hết hạn Token), tự động logout
+    if (response.status === 401) {
+        localStorage.removeItem('access_token');
+        // Có thể dispatch event để App biết mà redirect về login
+        window.dispatchEvent(new Event('auth:logout'));
+        throw new Error('Phiên đăng nhập hết hạn (401)');
+    }
+
     if (!response.ok) {
       throw new Error(`HTTP Error: ${response.status}`);
     }
     
-    const text = await response.text();
-    return text ? JSON.parse(text) : {};
+    return await response.json();
     
   } catch (error) {
     console.error('API Request Failed:', error);
