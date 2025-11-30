@@ -1,17 +1,51 @@
-// GreenMap-Frontend/src/components/Header.jsx
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // <-- Import
-import { Bell, ChevronDown, Menu, LogOut, Settings } from 'lucide-react';
-
-const notificationsData = [
-  { id: 1, title: "Hệ thống", message: "Đồng bộ dữ liệu AQI hoàn tất.", time: "Vừa xong", type: "success" },
-  { id: 2, title: "Cảnh báo", message: "Khu vực Cầu Giấy AQI > 150.", time: "15 phút trước", type: "alert" },
-];
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Bell, ChevronDown, Menu, LogOut, Settings, User } from 'lucide-react';
+import { fetchReports } from '../services'; // Import service lấy báo cáo
 
 export default function Header({ setIsSidebarOpen, onLogout }) {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const navigate = useNavigate(); // Hook
+  
+  // State cho dữ liệu thật
+  const [notifications, setNotifications] = useState([]);
+  const [userInfo, setUserInfo] = useState({ name: 'Quản Trị Viên'});
+  const navigate = useNavigate();
+
+  // --- LOAD DỮ LIỆU ---
+  useEffect(() => {
+    // 1. Load Thông báo (Lấy các báo cáo PENDING)
+    const loadNotifications = async () => {
+        try {
+            const data = await fetchReports('PENDING', 0, 5); // Lấy 5 báo cáo mới nhất
+            // Map dữ liệu báo cáo thành format thông báo
+            const notifs = data.map(report => ({
+                id: report.id,
+                title: "Báo cáo mới",
+                message: report.title, // Dùng tiêu đề báo cáo làm nội dung
+                time: new Date(report.created_at).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}),
+                type: 'alert' // Màu đỏ
+            }));
+            setNotifications(notifs);
+        } catch (error) {
+            console.error("Lỗi tải thông báo:", error);
+        }
+    };
+
+    // 2. Load thông tin User (Lấy từ LocalStorage nếu có)
+    const storedUser = localStorage.getItem('user_info');
+    if (storedUser) {
+        try {
+            setUserInfo(JSON.parse(storedUser));
+        } catch (e) { console.error("Lỗi parse user info", e); }
+    }
+
+    loadNotifications();
+    
+    // (Tuỳ chọn) Polling thông báo mỗi 30s
+    const interval = setInterval(loadNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <header className="flex-shrink-0 flex items-center justify-between h-16 p-4 md:px-6 bg-gray-900 border-b border-gray-700/50 relative z-20">
@@ -20,65 +54,86 @@ export default function Header({ setIsSidebarOpen, onLogout }) {
       </button>
       
       <div className="hidden lg:block">
-        <h2 className="text-xl font-semibold text-gray-100">Hệ Thống Quản Trị Trung Tâm</h2>
+        <h2 className="text-xl font-semibold text-gray-100 tracking-tight">Hệ Thống Quản Trị Trung Tâm</h2>
       </div>
       
       <div className="flex items-center space-x-4">
-        {/* Notifications */}
+        {/* --- NOTIFICATIONS --- */}
         <div className="relative">
-          <button onClick={() => setIsNotifOpen(!isNotifOpen)} className="text-gray-400 hover:text-white relative p-1 rounded-md hover:bg-gray-800">
+          <button onClick={() => setIsNotifOpen(!isNotifOpen)} className="text-gray-400 hover:text-white relative p-2 rounded-lg hover:bg-gray-800 transition-colors">
             <Bell size={20} />
-            <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-            </span>
+            {notifications.length > 0 && (
+              <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+              </span>
+            )}
           </button>
+
           {isNotifOpen && (
              <>
                <div className="fixed inset-0 z-40" onClick={() => setIsNotifOpen(false)}></div>
-               <div className="absolute right-0 mt-2 w-80 bg-gray-800 rounded-lg shadow-xl border border-gray-700 overflow-hidden z-50">
-                 <div className="p-3 border-b border-gray-700 font-semibold text-white">Thông báo</div>
-                 <div className="max-h-64 overflow-y-auto">
-                   {notificationsData.map(n => (
-                     <div key={n.id} className="p-3 border-b border-gray-700/50 hover:bg-gray-700 cursor-pointer">
-                        <span className={`text-sm font-bold ${n.type === 'alert' ? 'text-red-400' : 'text-green-400'}`}>{n.title}</span>
-                        <p className="text-sm text-gray-300">{n.message}</p>
-                     </div>
-                   ))}
+               <div className="absolute right-0 mt-2 w-80 bg-[#111318] rounded-xl shadow-2xl border border-gray-700 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                 <div className="p-4 border-b border-gray-700 font-bold text-white flex justify-between items-center">
+                     <span>Thông báo</span>
+                     <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full">{notifications.length} mới</span>
                  </div>
+                 <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                   {notifications.length === 0 ? (
+                       <div className="p-6 text-center text-gray-500 text-sm">Không có thông báo mới.</div>
+                   ) : (
+                       notifications.map(n => (
+                         <div key={n.id} onClick={() => { navigate('/reports'); setIsNotifOpen(false); }} className="p-4 border-b border-gray-800 hover:bg-gray-800/50 cursor-pointer transition-colors group">
+                            <div className="flex justify-between items-start mb-1">
+                                <span className="text-sm font-bold text-red-400 group-hover:text-red-300 transition-colors">{n.title}</span>
+                                <span className="text-[10px] text-gray-500">{n.time}</span>
+                            </div>
+                            <p className="text-sm text-gray-300 line-clamp-2">{n.message}</p>
+                         </div>
+                       ))
+                   )}
+                 </div>
+                 {notifications.length > 0 && (
+                     <div onClick={() => { navigate('/reports'); setIsNotifOpen(false); }} className="p-3 text-center text-xs font-bold text-emerald-500 hover:bg-gray-800 cursor-pointer border-t border-gray-700">
+                         Xem tất cả báo cáo
+                     </div>
+                 )}
                </div>
              </>
           )}
         </div>
 
-        {/* User Menu */}
+        {/* --- USER MENU --- */}
         <div className="relative">
-          <button onClick={() => setIsUserMenuOpen(!isUserMenuOpen)} className="flex items-center space-x-2 hover:bg-gray-800 p-2 rounded-lg">
-            <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold shadow">A</div>
-            <span className="hidden md:inline text-sm font-medium text-gray-200">Admin</span>
-            <ChevronDown size={16} className="text-gray-400" />
+          <button onClick={() => setIsUserMenuOpen(!isUserMenuOpen)} className="flex items-center space-x-3 hover:bg-gray-800 p-1.5 pl-3 rounded-xl transition-colors border border-transparent hover:border-gray-700">
+            <div className="text-right hidden md:block">
+                <div className="text-sm font-bold text-gray-200 leading-tight">{userInfo.name}</div>
+            </div>
+            <div className="w-9 h-9 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-emerald-900/20">
+                {userInfo.name.charAt(0).toUpperCase()}
+            </div>
+            <ChevronDown size={16} className="text-gray-500" />
           </button>
 
           {isUserMenuOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setIsUserMenuOpen(false)}></div>
-              <div className="absolute right-0 mt-2 w-56 bg-gray-800 rounded-lg shadow-xl border border-gray-700 overflow-hidden z-50">
-                <div className="p-4 border-b border-gray-700 bg-gray-800/50">
-                  <p className="text-sm font-bold text-white">Quản Trị Viên</p>
-                  <p className="text-xs text-gray-400">admin@greenmap.vn</p>
+              <div className="absolute right-0 mt-2 w-60 bg-[#111318] rounded-xl shadow-2xl border border-gray-700 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                <div className="p-4 border-b border-gray-800 bg-gray-800/30">
+                  <p className="text-sm font-bold text-white truncate">{userInfo.name}</p>
                 </div>
-                <ul className="py-1">
+                <ul className="py-1.5">
                   <li>
                     <button 
                         onClick={() => { navigate('/settings'); setIsUserMenuOpen(false); }} 
-                        className="flex items-center w-full px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                        className="flex items-center w-full px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
                     >
-                        <Settings size={16} className="mr-2"/> Cài đặt
+                        <Settings size={16} className="mr-3 text-gray-500"/> Cài đặt tài khoản
                     </button>
                   </li>
-                  <li className="border-t border-gray-700 mt-1">
-                    <button onClick={onLogout} className="flex items-center w-full px-4 py-2.5 text-sm text-red-400 hover:bg-gray-700 hover:text-red-300">
-                      <LogOut size={16} className="mr-2" /> Đăng xuất
+                  <li className="border-t border-gray-800 mt-1 pt-1">
+                    <button onClick={onLogout} className="flex items-center w-full px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors">
+                      <LogOut size={16} className="mr-3" /> Đăng xuất
                     </button>
                   </li>
                 </ul>
