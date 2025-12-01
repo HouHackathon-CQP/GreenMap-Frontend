@@ -68,7 +68,7 @@ npm install
 
 <h3>3. Cấu hình môi trường (.env)</h3>
 
-Tạo một file .env ở thư mục gốc của dự án và thêm đường dẫn API Backend:
+Tạo một file `.env` ở thư mục gốc của dự án và thêm đường dẫn API Backend:
 
 ```bash
 VITE_API_BASE_URL=(link API từ backend)

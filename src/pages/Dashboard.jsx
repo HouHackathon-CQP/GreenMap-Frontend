@@ -1,4 +1,3 @@
-// src/pages/Dashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { Radio, Signal, AlertCircle, Activity, BarChart3, MapPin, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell, AreaChart, Area } from 'recharts';
@@ -91,7 +90,6 @@ const getUserLocation = () => {
             reject(new Error("Geolocation not supported"));
             return;
         }
-        // Thêm timeout và accuracy
         const options = { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 };
         navigator.geolocation.getCurrentPosition(
             (pos) => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
@@ -110,25 +108,34 @@ export default function Dashboard() {
   const [locationTitle, setLocationTitle] = useState("Hà Nội (Mặc định)");
   const [isLoading, setIsLoading] = useState(true);
   const [selectedStation, setSelectedStation] = useState(null);
+  
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // --- EFFECT ĐỒNG HỒ REALTIME ---
+  useEffect(() => {
+    const timer = setInterval(() => {
+        setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
-      
       let userLat = null;
       let userLon = null;
       let locTitle = "Hà Nội (Mặc định)";
 
       try {
           const locationPromise = getUserLocation();
-          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject("Timeout"), 6000));
-          
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject("Timeout"), 3000));
           const pos = await Promise.race([locationPromise, timeoutPromise]);
           userLat = pos.lat;
           userLon = pos.lon;
           locTitle = "Vị trí của bạn";
       } catch (err) {
-          console.warn("Dùng vị trí mặc định do:", err);
+          // console.warn("Dùng vị trí mặc định do:", err);
       }
       
       setLocationTitle(locTitle);
@@ -174,30 +181,33 @@ export default function Dashboard() {
     <div className="space-y-6 pb-10">
       <StationDetailModal station={selectedStation} onClose={() => setSelectedStation(null)} />
 
-      {/* Header */}
       <div className="flex justify-between items-center">
         <div><h1 className="text-3xl font-black text-white tracking-tight">Dashboard Tổng quan</h1><p className="text-gray-400 text-sm mt-1">Hệ thống Quan trắc Môi trường Thông minh</p></div>
-        <div className="text-right hidden sm:block"><p className="text-white font-bold text-lg">{new Date().toLocaleTimeString('vi-VN')}</p><p className="text-gray-500 text-xs">{new Date().toLocaleDateString('vi-VN', {weekday: 'long', day:'numeric', month:'long'})}</p></div>
+        
+        {/* --- ĐỒNG HỒ REALTIME (Dùng state currentTime) --- */}
+        <div className="text-right hidden sm:block">
+            <p className="text-white font-bold text-lg">
+                {currentTime.toLocaleTimeString('vi-VN')}
+            </p>
+            <p className="text-gray-500 text-xs">
+                {currentTime.toLocaleDateString('vi-VN', {weekday: 'long', day:'numeric', month:'long'})}
+            </p>
+        </div>
+        {/* ------------------------------------------------ */}
       </div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <div className="bg-[#111318] border border-gray-800 p-6 rounded-2xl"><div className="flex justify-between mb-4"><div className="p-3 bg-blue-500/10 rounded-xl text-blue-400"><Radio size={24}/></div></div><div className="text-3xl font-black text-white mb-1">{kpiData.total}</div><div className="text-sm text-gray-400 font-medium">Tổng trạm lắp đặt</div></div>
         <div className="bg-[#111318] border border-gray-800 p-6 rounded-2xl"><div className="flex justify-between mb-4"><div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-400"><Signal size={24}/></div></div><div className="text-3xl font-black text-white mb-1">{kpiData.active}</div><div className="text-sm text-gray-400 font-medium">Trạm đang Online</div></div>
-        <div className="bg-[#111318] border border-gray-800 p-6 rounded-2xl"><div className="flex justify-between mb-4"><div className="p-3 bg-yellow-500/10 rounded-xl text-yellow-400"><AlertCircle size={24}/></div></div><div className="text-3xl font-black text-white mb-1">3</div><div className="text-sm text-gray-400 font-medium">Cảnh báo / Bảo trì</div></div>
+        <div className="bg-[#111318] border border-gray-800 p-6 rounded-2xl"><div className="flex justify-between mb-4"><div className="p-3 bg-yellow-500/10 rounded-xl text-yellow-400"><AlertCircle size={24}/></div></div><div className="text-3xl font-black text-white mb-1">0</div><div className="text-sm text-gray-400 font-medium">Cảnh báo / Bảo trì</div></div>
         <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 p-6 rounded-2xl"><div className="flex justify-between mb-4"><div className="p-3 bg-white/10 rounded-xl text-white"><Activity size={24}/></div><span className={`text-xs font-bold px-2 py-1 rounded uppercase border ${getAQIInfo(kpiData.avgAqi).bg} ${getAQIInfo(kpiData.avgAqi).text} ${getAQIInfo(kpiData.avgAqi).border}`}>{getAQIInfo(kpiData.avgAqi).level}</span></div><div className="text-4xl font-black text-white mb-1">{kpiData.avgAqi} <span className="text-sm font-medium text-gray-400">AQI</span></div><div className="text-sm text-gray-400 font-medium">Trung bình toàn TP</div></div>
       </div>
 
-      {/* --- MAP SECTION (ĐÃ FIX RESPONSIVE MOBILE) --- */}
-      {/* Container: Mobile h-auto (tự giãn), Desktop h-500px */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-auto lg:h-[500px]">
-        {/* Bản đồ: Mobile cao 400px, Desktop ăn full chiều cao */}
         <div className="lg:col-span-2 bg-[#111318] rounded-3xl border border-gray-800 overflow-hidden shadow-xl relative flex flex-col h-[400px] lg:h-full">
             <div className="absolute top-4 left-4 z-10 pointer-events-none"><div className="bg-black/60 backdrop-blur px-3 py-1.5 rounded-lg border border-white/10 pointer-events-auto flex items-center"><MapPin className="text-emerald-500 mr-2" size={16}/> <span className="text-white text-xs font-bold">Bản đồ Trực tuyến</span></div></div>
             <div className="flex-1 w-full h-full"><GreenMap onStationSelect={setSelectedStation} /></div>
         </div>
-        
-        {/* Danh sách: Mobile cao 400px để scroll, Desktop ăn full */}
         <div className="bg-[#111318] rounded-3xl border border-gray-800 shadow-xl flex flex-col overflow-hidden h-[400px] lg:h-full">
             <div className="p-5 border-b border-gray-800 bg-gray-900/50 flex justify-between items-center"><h3 className="text-white font-bold text-lg">Trạm đo ({sensorList.length})</h3><div className="text-xs text-emerald-400 font-bold bg-emerald-900/20 border border-emerald-500/20 px-2 py-1 rounded">Live</div></div>
             <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
@@ -211,7 +221,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* --- CHARTS SECTION --- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="h-[550px]"> 
             <WeatherWidget data={weatherData} locationName={locationTitle} />

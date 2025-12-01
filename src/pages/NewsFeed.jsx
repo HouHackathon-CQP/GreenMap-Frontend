@@ -64,7 +64,7 @@ const FeaturedNews = ({ news }) => {
     );
 };
 
-// --- 2. NEWS CARD (SỬA: Dùng thẻ 'a' bao bọc toàn bộ card) ---
+// --- 2. NEWS CARD ---
 const NewsCard = ({ item }) => {
     // Kiểm tra các biến thể của URL
     const articleLink = item.url || item.link || item.article_url || '#';
