@@ -4,7 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { 
   Loader2, Wind, CloudRain, Droplets, Map as MapIcon, 
   Thermometer, Navigation, X, LocateFixed, Car,
-  Sun, Cloud, CloudLightning // <-- Import thêm các icon thời tiết
+  Sun, Cloud, CloudLightning 
 } from 'lucide-react';
 import ReactDOMServer from 'react-dom/server';
 import { fetchLiveAQI, fetchTrafficMap, fetchTrafficLive } from '../services'; 
@@ -16,7 +16,7 @@ const AirQualityMap = () => {
   const markersRef = useRef([]); 
   const userMarkerRef = useRef(null); 
 
-  const [viewMode, setViewMode] = useState('AQI'); 
+  const [viewMode, setViewMode] = useState('AQI'); // 'AQI' | 'RAIN' | 'TRAFFIC'
   const [aqiData, setAqiData] = useState([]);
   const [rainData, setRainData] = useState([]);
   const [forecast, setForecast] = useState(null); 
@@ -25,13 +25,12 @@ const AirQualityMap = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedStation, setSelectedStation] = useState(null);
 
-  // --- HÀM CHỌN ICON THỜI TIẾT (MỚI) ---
+  // --- HÀM CHỌN ICON THỜI TIẾT ---
   const getWeatherMarkerIcon = (weatherType) => {
       const type = String(weatherType).toLowerCase();
       if (type.includes('mưa') || type.includes('rain')) return <CloudRain size={16} color="white"/>;
       if (type.includes('dông') || type.includes('storm')) return <CloudLightning size={16} color="white"/>;
       if (type.includes('mây') || type.includes('cloud') || type.includes('âm u')) return <Cloud size={16} color="white"/>;
-      // Mặc định là Nắng/Quang đãng
       return <Sun size={16} color="white"/>;
   };
 
@@ -53,7 +52,7 @@ const AirQualityMap = () => {
     loadAllData();
   }, []);
 
-  // 1b. LOAD TRAFFIC
+  // 1b. LOAD TRAFFIC (Polling)
   useEffect(() => {
       if (viewMode !== 'TRAFFIC') return;
       fetchTrafficLive().then(res => { if(res?.status) setTrafficStatus(res.status); });
@@ -63,10 +62,11 @@ const AirQualityMap = () => {
       return () => clearInterval(interval);
   }, [viewMode]);
 
-  // HÀM ĐỊNH VỊ
+  // HÀM ĐỊNH VỊ (GPS)
   const handleLocateMe = () => {
       const map = mapInstanceRef.current;
       if(!map || !navigator.geolocation) return;
+      
       const options = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
 
       navigator.geolocation.getCurrentPosition((pos) => {
@@ -77,6 +77,7 @@ const AirQualityMap = () => {
 
           const el = document.createElement('div');
           el.innerHTML = `<div class="relative flex h-5 w-5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span><span class="relative inline-flex rounded-full h-5 w-5 bg-blue-600 border-2 border-white shadow-md"></span></div>`;
+          
           if(userMarkerRef.current) userMarkerRef.current.remove();
           userMarkerRef.current = new maplibregl.Marker({ element: el }).setLngLat(coords).addTo(map);
       }, (err) => console.log(err), options);
@@ -117,10 +118,12 @@ const AirQualityMap = () => {
     const map = mapInstanceRef.current;
     if (!map) return;
 
+    // Toggle Traffic Layer
     if (map.getLayer('traffic-lines')) {
         map.setLayoutProperty('traffic-lines', 'visibility', viewMode === 'TRAFFIC' ? 'visible' : 'none');
     }
 
+    // Reset Markers
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
 
@@ -135,7 +138,7 @@ const AirQualityMap = () => {
         return; 
     }
 
-    // --- LOGIC MAP ICON ---
+    // Prepare Marker Data
     const displayData = viewMode === 'AQI' 
         ? aqiData.map(item => ({ 
             raw: item, 
@@ -152,9 +155,7 @@ const AirQualityMap = () => {
             coords: item.location.coordinates, 
             value: item.temperature, 
             unit: '°C', 
-            // Nếu mưa thì xanh dương, không mưa thì vàng cam (màu nắng)
             color: item.isRaining ? '#3b82f6' : '#f59e0b', 
-            // GỌI HÀM CHỌN ICON THÔNG MINH Ở ĐÂY
             icon: getWeatherMarkerIcon(item.weatherType) 
           }));
 
@@ -212,23 +213,53 @@ const AirQualityMap = () => {
           <button onClick={handleLocateMe} className="flex items-center justify-center w-12 h-12 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-lg shadow-blue-900/50 transition-transform active:scale-95"><LocateFixed size={24} /></button>
       </div>
 
-      {/* SIDEBAR CHI TIẾT */}
+      {/* SIDEBAR CHI TIẾT (RESPONSIVE: Mobile BottomSheet / Desktop Sidebar) */}
       {selectedStation && viewMode !== 'TRAFFIC' && (
-         <div className="absolute top-4 right-4 z-20 w-80 bg-gray-900/95 backdrop-blur-xl border border-gray-700 rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-right-10 fade-in duration-300">
+         <div className="
+            absolute z-50 
+            /* MOBILE STYLE: Dính đáy, trượt lên */
+            bottom-0 left-0 w-full 
+            rounded-t-3xl border-t border-gray-700
+            animate-in slide-in-from-bottom-10 fade-in duration-300
+            max-h-[60vh] overflow-y-auto
+
+            /* DESKTOP STYLE: Dính góc phải, trượt ngang */
+            md:top-4 md:right-4 md:w-80 md:bottom-auto md:left-auto 
+            md:rounded-3xl md:border md:max-h-none
+            md:animate-in md:slide-in-from-right-10 md:slide-in-from-bottom-0
+
+            bg-gray-900/95 backdrop-blur-xl shadow-2xl 
+         ">
              <div className="p-5 relative">
                  <button onClick={() => setSelectedStation(null)} className="absolute top-4 right-4 p-1 bg-gray-800 rounded-full text-gray-400 hover:text-white transition-colors"><X size={16}/></button>
+                 
                  <div className="flex items-center space-x-3 mb-2">
                      <div className="p-2 rounded-xl shadow-inner" style={{backgroundColor: `${selectedStation.displayColor}20`, color: selectedStation.displayColor}}>
-                        {/* ICON TRONG SIDEBAR CŨNG PHẢI ĐỔI THEO THỜI TIẾT */}
                         {selectedStation.type === 'AQI' ? <Wind size={20}/> : getWeatherMarkerIcon(selectedStation.weatherType)}
                      </div>
-                     <div className="flex-1 min-w-0"><h3 className="font-bold text-white text-base leading-tight truncate">{selectedStation.station_name}</h3><p className="text-xs text-gray-400 mt-0.5">Vừa cập nhật</p></div>
+                     <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-white text-base leading-tight truncate">{selectedStation.station_name}</h3>
+                        <p className="text-xs text-gray-400 mt-0.5">Vừa cập nhật</p>
+                     </div>
                  </div>
+
                  <div className="mt-4 flex items-center justify-between p-4 rounded-2xl bg-gray-800/80 border border-gray-700/50">
-                     <div><p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Chỉ số chính</p><div className="text-3xl font-black text-white mt-1 leading-none">{selectedStation.type === 'AQI' ? selectedStation.value : selectedStation.temperature}<span className="text-sm text-gray-500 font-medium ml-1">{selectedStation.type === 'AQI' ? 'AQI' : '°C'}</span></div></div>
-                     <div className="text-right"><p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Trạng thái</p><div className="mt-1 font-bold text-sm" style={{color: selectedStation.displayColor}}>{selectedStation.type === 'AQI' ? (selectedStation.value > 100 ? 'Ô nhiễm' : 'Tốt') : (selectedStation.weatherType)}</div></div>
+                     <div>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Chỉ số chính</p>
+                        <div className="text-3xl font-black text-white mt-1 leading-none">
+                            {selectedStation.type === 'AQI' ? selectedStation.value : selectedStation.temperature}
+                            <span className="text-sm text-gray-500 font-medium ml-1">{selectedStation.type === 'AQI' ? 'AQI' : '°C'}</span>
+                        </div>
+                     </div>
+                     <div className="text-right">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Trạng thái</p>
+                        <div className="mt-1 font-bold text-sm" style={{color: selectedStation.displayColor}}>
+                            {selectedStation.type === 'AQI' ? (selectedStation.value > 100 ? 'Ô nhiễm' : 'Tốt') : (selectedStation.weatherType)}
+                        </div>
+                     </div>
                  </div>
              </div>
+
              {selectedStation.type === 'RAIN' ? (
                  <div className="px-5 pb-5 grid grid-cols-2 gap-3">
                      <div className="bg-gray-800/50 p-3 rounded-xl border border-gray-700/50"><div className="flex items-center text-gray-400 text-xs mb-1 font-medium"><Droplets size={12} className="mr-1.5 text-blue-400"/> Độ ẩm</div><div className="text-lg font-bold text-white">{Math.round(selectedStation.humidity)}%</div></div>
