@@ -8,10 +8,9 @@ const STATUS_TABS = [
     { id: 'REJECTED', label: 'Đã từ chối' },
 ];
 
-// --- ẢNH MẶC ĐỊNH (OPTION 2: ĐÔ THỊ) ---
+// --- ẢNH MẶC ĐỊNH ---
 const DEFAULT_IMAGE = "https://placehold.co/600x400/1f2937/9ca3af?text=No+Image";
 
-// Danh sách ảnh mẫu để test
 const SAMPLE_IMAGES = [
     ""
 ];
@@ -48,16 +47,12 @@ export default function ReportApproval() {
     }
   };
 
-  // --- TẠO BÁO CÁO TEST ---
   const handleCreateTest = async () => {
-      // Random chọn 1 ảnh (có thể là ảnh thật hoặc rỗng)
       const randomImg = SAMPLE_IMAGES[Math.floor(Math.random() * SAMPLE_IMAGES.length)];
       
       const testData = {
           title: "Báo cáo " + new Date().toLocaleTimeString('vi-VN'),
-          description: randomImg 
-            ? "Báo cáo này có ảnh minh họa thực tế từ hiện trường." 
-            : "Người dân không gửi kèm ảnh. Hệ thống sẽ hiển thị ảnh mặc định.",
+          description: randomImg ? "Có ảnh minh họa thực tế." : "Báo cáo này không có ảnh.",
           latitude: 21.0285 + (Math.random() - 0.5) * 0.05,
           longitude: 105.8542 + (Math.random() - 0.5) * 0.05,
           image_url: randomImg
@@ -74,7 +69,6 @@ export default function ReportApproval() {
 
   return (
     <div className="space-y-6 pb-10">
-      {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
         <div>
             <h2 className="text-2xl font-bold text-white flex items-center">
@@ -94,7 +88,6 @@ export default function ReportApproval() {
         </div>
       </div>
 
-      {/* LIST */}
       <div className="bg-[#111318] border border-gray-800 rounded-3xl shadow-xl overflow-hidden min-h-[400px]">
         {loading ? (
             <div className="flex flex-col items-center justify-center h-64 text-gray-500"><Loader2 className="animate-spin mb-2" size={32}/> Đang tải dữ liệu...</div>
@@ -105,24 +98,14 @@ export default function ReportApproval() {
                 {reports.map(report => (
                     <div key={report.id} className="p-6 hover:bg-gray-800/30 transition-colors flex flex-col md:flex-row gap-6">
                         
-                        {/* --- KHUNG ẢNH (LOGIC MỚI) --- */}
-                        <div className="w-full md:w-48 h-32 flex-shrink-0 bg-gray-800 rounded-xl overflow-hidden border border-gray-700 group relative">
+                        {/* --- KHUNG ẢNH (ĐÃ BỎ NHÃN) --- */}
+                        <div className="w-full md:w-48 h-32 flex-shrink-0 bg-gray-800 rounded-xl overflow-hidden border border-gray-700 group">
                             <img 
                                 src={report.image_url || DEFAULT_IMAGE} 
                                 alt="Report" 
-                                className={`w-full h-full object-cover transition-transform duration-500 
-                                    ${report.image_url ? 'group-hover:scale-110' : 'opacity-60 grayscale'}`} 
+                                className={`w-full h-full object-cover transition-transform duration-500 ${report.image_url ? 'group-hover:scale-110' : 'opacity-80'}`} 
                                 onError={(e) => { e.target.onerror = null; e.target.src = DEFAULT_IMAGE; }}
                             />
-                            
-                            {/* Nhãn nếu là ảnh mặc định */}
-                            {!report.image_url && (
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <span className="text-gray-300 text-[10px] font-bold uppercase tracking-wider bg-black/60 px-2 py-1 rounded backdrop-blur-sm border border-gray-600">
-                                        Ảnh mặc định
-                                    </span>
-                                </div>
-                            )}
                         </div>
                         {/* ----------------------------- */}
 
