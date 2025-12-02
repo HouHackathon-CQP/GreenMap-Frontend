@@ -9,34 +9,41 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ================================
+      # 🔄 Checkout source code
+      # ================================
       - name: 🔄 Checkout code từ nhánh main
         uses: actions/checkout@v3
-        with:
-          ref: main
 
-      - name: 🧳 Copy code lên server
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: 8686         
-          source: "./"
-          target: "/home/GreenMap-Frontend"
-
+      # ================================
+      # 🚀 Deploy lên server qua SSH
+      # ================================
       - name: 🚀 Deploy Docker trên server
-        id: deploy_server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          port: 8686         
+          port: 8686
           script: |
+            echo "===== 🛠 Start Deploy GreenMap-Frontend ====="
             cd /home/GreenMap-Frontend
+
+            echo "📥 Pull code mới nhất từ GitHub"
+            git reset --hard
+            git checkout main
+            git pull origin main
+
+            echo "🐳 Dừng Docker cũ"
             docker compose down || true
+
+            echo "🐳 Build Docker image mới"
             docker compose build --no-cache
+
+            echo "🚀 Khởi động lại dịch vụ"
             docker compose up -d
+
+            echo "===== ✅ Deploy thành công ====="
 
       # ================================
       # 📣 THÔNG BÁO THÀNH CÔNG
