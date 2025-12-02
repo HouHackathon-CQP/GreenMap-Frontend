@@ -51,8 +51,8 @@ jobs:
       - name: 📣 Thông báo deploy thành công (Discord)
         if: success()
         run: |
-          COMMIT_MSG=${{ toJson(github.event.head_commit.message) }}
-          AUTHOR=${{ toJson(github.event.head_commit.author.name) }}
+          COMMIT_MSG=$(echo "${{ github.event.head_commit.message }}" | sed 's/"/\\"/g')
+          AUTHOR=$(echo "${{ github.event.head_commit.author.name }}" | sed 's/"/\\"/g')
           PIPELINE_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
           curl -H "Content-Type: application/json" \
@@ -63,8 +63,8 @@ jobs:
               \"description\": \"Dự án đã chạy phiên bản mới nhất từ nhánh **main**.\",
               \"color\": 5763719,
               \"fields\": [
-                {\"name\": \"📝 Commit\", \"value\": $COMMIT_MSG},
-                {\"name\": \"👤 Tác giả\", \"value\": $AUTHOR},
+                {\"name\": \"📝 Commit\", \"value\": \"${COMMIT_MSG}\"},
+                {\"name\": \"👤 Tác giả\", \"value\": \"${AUTHOR}\"},
                 {\"name\": \"🔗 Pipeline\", \"value\": \"[Xem pipeline tại đây](${PIPELINE_URL})\"},
                 {\"name\": \"🕒 Thời gian\", \"value\": \"$(date)\"}
               ]
@@ -78,8 +78,8 @@ jobs:
       - name: ❌ Thông báo deploy thất bại (Discord)
         if: failure()
         run: |
-          COMMIT_MSG=${{ toJson(github.event.head_commit.message) }}
-          AUTHOR=${{ toJson(github.event.head_commit.author.name) }}
+          COMMIT_MSG=$(echo "${{ github.event.head_commit.message }}" | sed 's/"/\\"/g')
+          AUTHOR=$(echo "${{ github.event.head_commit.author.name }}" | sed 's/"/\\"/g')
           PIPELINE_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
           curl -H "Content-Type: application/json" \
@@ -90,8 +90,8 @@ jobs:
               \"description\": \"Vui lòng kiểm tra lại logs của GitHub Actions.\",
               \"color\": 15548997,
               \"fields\": [
-                {\"name\": \"📝 Commit\", \"value\": $COMMIT_MSG},
-                {\"name\": \"👤 Tác giả\", \"value\": $AUTHOR},
+                {\"name\": \"📝 Commit\", \"value\": \"${COMMIT_MSG}\"},
+                {\"name\": \"👤 Tác giả\", \"value\": \"${AUTHOR}\"},
                 {\"name\": \"🔗 Pipeline\", \"value\": \"[Xem lỗi tại đây](${PIPELINE_URL})\"},
                 {\"name\": \"🕒 Thời gian\", \"value\": \"$(date)\"}
               ]
