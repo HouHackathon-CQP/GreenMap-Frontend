@@ -1,22 +1,37 @@
-// GreenMap-Frontend/src/components/Sidebar.jsx
+// Copyright 2025 HouHackathon-CQP
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import React from 'react';
-import { NavLink } from 'react-router-dom'; // <-- Dùng NavLink
+import { NavLink } from 'react-router-dom'; 
 import { 
   LayoutDashboard, Map, BatteryCharging, Flag, 
   BarChart3, Settings, X, Globe, Bike, MapPin, 
   Newspaper, Users, ShieldCheck 
 } from 'lucide-react';
 
+import logoImg from '../assets/logo.png'; 
+
 const NavItem = ({ to, label, icon: IconComponent, onNavigate }) => (
   <li>
     <NavLink
       to={to}
-      onClick={onNavigate} // Đóng sidebar mobile khi click
+      onClick={onNavigate} 
       className={({ isActive }) => 
         `flex items-center p-3 rounded-lg transition-colors duration-200 mb-1 ${
           isActive
-            ? 'bg-green-600 text-white font-semibold shadow-md' // Style khi đang chọn
-            : 'text-gray-400 hover:bg-gray-800 hover:text-green-400' // Style thường
+            ? 'bg-green-600 text-white font-semibold shadow-md' 
+            : 'text-gray-400 hover:bg-gray-800 hover:text-green-400' 
         }`
       }
     >
@@ -44,7 +59,10 @@ export default function Sidebar({ isOpen, setIsOpen }) {
       <nav className={`fixed lg:static inset-y-0 left-0 z-40 w-64 bg-gray-900 transition-transform duration-300 ease-in-out transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:flex lg:flex-col border-r border-gray-700`}>
         <div className="flex items-center justify-between p-4 h-16 border-b border-gray-700 bg-gray-800/50">
           <div className="flex items-center">
-            <div className="w-8 h-8 rounded bg-green-600 flex items-center justify-center mr-2 font-bold text-white">GM</div>
+            {/* --- SỬA Ở ĐÂY: Dùng biến logoImg --- */}
+            <div className="w-8 h-8 rounded flex items-center justify-center mr-2 overflow-hidden">
+                <img src={logoImg} alt="Logo" className="w-full h-full object-contain"/>
+            </div>
             <span className="text-lg font-bold text-white tracking-tight">Admin Portal</span>
           </div>
           <button onClick={closeSidebar} className="lg:hidden text-gray-400 hover:text-white">

@@ -1,11 +1,20 @@
-// src/pages/ContentManagement.jsx
+// Copyright 2025 HouHackathon-CQP
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import React, { useState, useEffect } from 'react';
 import { fetchLocations, createLocation, updateLocation, deleteLocation } from '../services'; 
 import { Loader2, Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, X, Save, AlertTriangle, MapPin, Filter, LayoutList } from 'lucide-react';
-
-// --- MODAL VÀ DELETE MODAL (GIỮ NGUYÊN CODE CŨ CỦA BẠN VÌ ĐÃ ĐẸP RỒI) ---
-// (Tôi lược bỏ phần code UI của Modal ở đây để tập trung vào Logic chính cho gọn)
-// ... Hãy giữ nguyên code Modal và DeleteConfirmModal ...
 
 const LocationModal = ({ isOpen, onClose, onSubmit, initialData, title }) => {
     if (!isOpen) return null;
@@ -78,7 +87,6 @@ export default function ContentManagement({ title, locationType }) {
     loadData();
   }, [locationType]);
 
-  // 4. LOGIC LỌC & CẮT TRANG (Xử lý tại trình duyệt)
   // Bước 1: Lọc toàn bộ danh sách theo từ khóa
   const filteredLocations = allLocations.filter(item => 
     (item.name && item.name.toLowerCase().includes(searchTerm.toLowerCase())) || 

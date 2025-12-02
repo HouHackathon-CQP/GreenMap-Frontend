@@ -1,7 +1,19 @@
-// src/services/contentService.js
+// Copyright 2025 HouHackathon-CQP
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import { apiFetch } from './apiClient';
 
-// Helper tính tâm (Giữ nguyên)
 const getCentroid = (coords) => {
     if (!coords || coords.length === 0) return { lat: 0, lng: 0 };
     const points = (Array.isArray(coords[0]) && Array.isArray(coords[0][0])) ? coords[0] : coords;
@@ -43,12 +55,11 @@ const mapData = (dataArray, locationType) => {
     });
 };
 
-// --- CHIẾN THUẬT: FETCH ALL (VÉT CẠN) ---
 // Hàm này sẽ tự động gọi API nhiều lần cho đến khi lấy hết dữ liệu
 export const fetchLocations = async (locationType = null) => {
   let allResults = [];
   let offset = 0;
-  const BATCH_SIZE = 100; // Mỗi lần xin 100 dòng (mức an toàn)
+  const BATCH_SIZE = 100; // Mỗi lần xin 100 dòng
   let hasMore = true;
 
   console.log(`🚀 Đang tải toàn bộ dữ liệu ${locationType || ''}...`);

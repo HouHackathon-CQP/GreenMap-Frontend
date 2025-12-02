@@ -1,4 +1,59 @@
-/* GreenMap-Frontend/src/index.css */
+/*Copyright 2025 HouHackathon-CQP
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License. */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Cuộn mượt cho anchor link trong Landing */
+html {
+  scroll-behavior: smooth;
+}
+
+/* --- TÙY BIẾN THANH CUỘN (SCROLLBAR) --- */
+
+::-webkit-scrollbar {
+  width: 8px;  /* Chiều rộng thanh dọc */
+  height: 8px; /* Chiều cao thanh ngang */
+}
+
+::-webkit-scrollbar-track {
+  background: #111318; /* Màu đen trùng với nền Dashboard */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #374151; /* Màu xám đậm (gray-700) */
+  border-radius: 4px;
+  border: 2px solid #111318; /* Tạo viền giả để thanh trượt trông nhỏ gọn hơn */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4b5563; /* Sáng hơn chút khi hover (gray-600) */
+}
+
+/* --- TÙY CHỈNH RIÊNG CHO SIDEBAR HOẶC LIST --- */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 10px;
+  border: none; /* Bỏ viền để nó tròn trịa */
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent; /* Nền trong suốt cho đẹp */
+}

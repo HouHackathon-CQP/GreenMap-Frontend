@@ -1,37 +1,84 @@
-// src/services/apiClient.js
+// Copyright 2025 HouHackathon-CQP
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-// Lấy URL từ biến môi trường
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
+// --- HÀM CACHE (Giữ nguyên) ---
+const fetchWithCache = async (url, config, ttl = 5 * 60 * 1000) => { 
+    const cacheKey = `cache_${url}`;
+    const cached = localStorage.getItem(cacheKey);
+
+    if (cached) {
+        try {
+            const { data, timestamp } = JSON.parse(cached);
+            if (Date.now() - timestamp < ttl) {
+                console.log(`⚡ Dùng Cache cho: ${url}`);
+                return data;
+            }
+        } catch (e) { console.warn("Lỗi cache", e); }
+    }
+
+    const response = await fetch(url, config);
+    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+    const data = await response.json();
+
+    try {
+        localStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: Date.now() }));
+    } catch (e) {}
+
+    return data;
+};
+
+// --- HÀM FETCH CHÍNH (ĐÃ SỬA LOGIC CACHE) ---
 export const apiFetch = async (endpoint, options = {}) => {
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
   const url = `${BASE_URL}/${cleanEndpoint}`;
   
-  // --- BẮT ĐẦU SỬA: Tự động lấy Token ---
   const token = localStorage.getItem('access_token');
-  
   const headers = {
     'Content-Type': 'application/json',
-    // Nếu có token, tự động thêm vào Header Authorization
     ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     ...options.headers,
   };
-  // --------------------------------------
 
-  const config = {
-    ...options,
-    headers,
-  };
+  const config = { ...options, headers };
 
+  // --- SỬA Ở ĐÂY: CHỈ CACHE THỜI TIẾT & TRAFFIC ---
+  // Các API quản trị (reports, locations...) sẽ LUÔN gọi mới
+  const shouldCache = (!config.method || config.method === 'GET') && 
+                      (url.includes('weather') || url.includes('traffic'));
+
+  if (shouldCache) {
+      try {
+          return await fetchWithCache(url, config);
+      } catch (error) {
+          // Fallback nếu lỗi mạng
+          const cacheKey = `cache_${url}`;
+          const cached = localStorage.getItem(cacheKey);
+          if (cached) return JSON.parse(cached).data;
+          throw error;
+      }
+  }
+
+  // Các API khác gọi thẳng (Realtime)
   try {
     const response = await fetch(url, config);
     
-    // Nếu gặp lỗi 401 (Hết hạn Token), tự động logout
     if (response.status === 401) {
         localStorage.removeItem('access_token');
-        // Có thể dispatch event để App biết mà redirect về login
-        window.dispatchEvent(new Event('auth:logout'));
-        throw new Error('Phiên đăng nhập hết hạn (401)');
+        window.location.href = '/login';
+        throw new Error('Hết phiên đăng nhập');
     }
 
     if (!response.ok) {

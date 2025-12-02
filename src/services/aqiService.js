@@ -1,4 +1,17 @@
-// src/services/aqiService.js
+// Copyright 2025 HouHackathon-CQP
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import { apiFetch } from './apiClient';
 import { FALLBACK_AQI_DATA } from './mockData';
 import { pm25ToAQI } from '../utils/aqiCalculator'; 
@@ -39,7 +52,6 @@ export const fetchLiveAQI = async () => {
             unit: "AQI",
             coordinates: { longitude: coords[0], latitude: coords[1] },
             provider: item.provider?.value,
-            // Mock dữ liệu phụ cho đẹp giao diện
             temperature: item.temperature?.value || (28 + Math.random()*2).toFixed(0),
             humidity: item.relativeHumidity?.value || (60 + Math.random()*10).toFixed(0),
             wind_speed: item.windSpeed?.value || (3.5 + Math.random()).toFixed(1)

@@ -1,48 +1,49 @@
+// Copyright 2025 HouHackathon-CQP
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, ChevronDown, Menu, LogOut, Settings, User } from 'lucide-react';
-import { fetchReports } from '../services'; // Import service lấy báo cáo
+import { fetchReports } from '../services';
 
 export default function Header({ setIsSidebarOpen, onLogout }) {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   
-  // State cho dữ liệu thật
   const [notifications, setNotifications] = useState([]);
   const [userInfo, setUserInfo] = useState({ name: 'Quản Trị Viên'});
   const navigate = useNavigate();
 
-  // --- LOAD DỮ LIỆU ---
   useEffect(() => {
-    // 1. Load Thông báo (Lấy các báo cáo PENDING)
     const loadNotifications = async () => {
         try {
-            const data = await fetchReports('PENDING', 0, 5); // Lấy 5 báo cáo mới nhất
-            // Map dữ liệu báo cáo thành format thông báo
+            const data = await fetchReports('PENDING', 0, 5);
             const notifs = data.map(report => ({
                 id: report.id,
                 title: "Báo cáo mới",
-                message: report.title, // Dùng tiêu đề báo cáo làm nội dung
+                message: report.title,
                 time: new Date(report.created_at).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}),
-                type: 'alert' // Màu đỏ
+                type: 'alert'
             }));
             setNotifications(notifs);
-        } catch (error) {
-            console.error("Lỗi tải thông báo:", error);
-        }
+        } catch (error) { console.error(error); }
     };
 
-    // 2. Load thông tin User (Lấy từ LocalStorage nếu có)
     const storedUser = localStorage.getItem('user_info');
-    if (storedUser) {
-        try {
-            setUserInfo(JSON.parse(storedUser));
-        } catch (e) { console.error("Lỗi parse user info", e); }
-    }
+    if (storedUser) { try { setUserInfo(JSON.parse(storedUser)); } catch (e) {} }
 
     loadNotifications();
-    
-    // (Tuỳ chọn) Polling thông báo mỗi 30s
     const interval = setInterval(loadNotifications, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -73,7 +74,18 @@ export default function Header({ setIsSidebarOpen, onLogout }) {
           {isNotifOpen && (
              <>
                <div className="fixed inset-0 z-40" onClick={() => setIsNotifOpen(false)}></div>
-               <div className="absolute right-0 mt-2 w-80 bg-[#111318] rounded-xl shadow-2xl border border-gray-700 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+               
+               {/* --- SỬA Ở ĐÂY: CSS Responsive cho Dropdown --- */}
+               <div className="
+                    z-50 bg-[#111318] rounded-xl shadow-2xl border border-gray-700 overflow-hidden 
+                    animate-in fade-in zoom-in-95 duration-200 mt-2
+                    
+                    /* MOBILE: Dùng Fixed để căn giữa màn hình, cách lề trái phải 1rem */
+                    fixed top-16 left-4 right-4 w-auto
+                    
+                    /* DESKTOP (md trở lên): Dùng Absolute để dính vào icon chuông */
+                    md:absolute md:top-full md:right-0 md:left-auto md:w-80
+               ">
                  <div className="p-4 border-b border-gray-700 font-bold text-white flex justify-between items-center">
                      <span>Thông báo</span>
                      <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full">{notifications.length} mới</span>
@@ -124,10 +136,7 @@ export default function Header({ setIsSidebarOpen, onLogout }) {
                 </div>
                 <ul className="py-1.5">
                   <li>
-                    <button 
-                        onClick={() => { navigate('/settings'); setIsUserMenuOpen(false); }} 
-                        className="flex items-center w-full px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
-                    >
+                    <button onClick={() => { navigate('/settings'); setIsUserMenuOpen(false); }} className="flex items-center w-full px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors">
                         <Settings size={16} className="mr-3 text-gray-500"/> Cài đặt tài khoản
                     </button>
                   </li>
