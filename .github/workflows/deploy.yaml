@@ -20,6 +20,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
+          port: 8686         
           source: "./"
           target: "/home/GreenMap-Frontend"
 
@@ -30,6 +31,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
+          port: 8686         
           script: |
             cd /home/GreenMap-Frontend
             docker compose down || true
