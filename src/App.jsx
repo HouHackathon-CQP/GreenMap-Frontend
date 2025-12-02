@@ -27,6 +27,7 @@ import Settings from './pages/Settings';
 import AirQualityMap from './pages/AirQualityMap';
 import NewsFeed from './pages/NewsFeed';
 import UserManagement from './pages/UserManagement';
+import Landing from './pages/Landing';
 
 // Import thêm hàm logoutUser
 import { logoutUser } from './services'; 
@@ -82,11 +83,11 @@ export default function App() {
 
   return (
     <Routes>
+      <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
 
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} handleLogout={handleLogout} />}>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/map" element={<AirQualityMap />} />
           <Route path="/news" element={<NewsFeed />} />
@@ -102,7 +103,7 @@ export default function App() {
           <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

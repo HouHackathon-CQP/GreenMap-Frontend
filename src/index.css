@@ -16,6 +16,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Cuộn mượt cho anchor link trong Landing */
+html {
+  scroll-behavior: smooth;
+}
+
 /* --- TÙY BIẾN THANH CUỘN (SCROLLBAR) --- */
 
 ::-webkit-scrollbar {
