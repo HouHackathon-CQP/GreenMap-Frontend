@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//src/App.jsx
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate, Outlet } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
@@ -39,11 +40,12 @@ const ProtectedRoute = () => {
 
 const MainLayout = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
   return (
-    <div className="flex h-screen w-full bg-gray-900 text-gray-200 font-inter">
+    // Sửa bg-gray-900 thành bg-gray-100 dark:bg-gray-900
+    <div className="flex h-screen w-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-200 font-inter transition-colors duration-300">
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <Header setIsSidebarOpen={setIsSidebarOpen} onLogout={handleLogout} />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-gray-950/50">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-gray-100 dark:bg-gray-950/50">
           <Outlet />
         </main>
       </div>

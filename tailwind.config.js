@@ -16,14 +16,25 @@
 export default {
   content: [
     "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}", // <-- Đảm bảo dòng này CHÍNH XÁC
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class', // <--- QUAN TRỌNG: Kích hoạt chế độ class
   theme: {
     extend: {
       fontFamily: {
-        'inter': ['Inter', 'sans-serif'], // <-- Bạn cũng đã thêm dòng này chứ?
+        inter: ['Inter', 'sans-serif'],
       },
+      colors: {
+        // Định nghĩa màu tối gốc của bạn để tái sử dụng
+        dark: {
+          bg: '#111318',
+          card: '#1f2937',
+          border: '#374151'
+        }
+      }
     },
   },
-  plugins: [],
+  plugins: [
+    require("tailwindcss-animate"),
+  ],
 }
