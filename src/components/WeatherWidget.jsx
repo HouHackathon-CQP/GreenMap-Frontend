@@ -15,6 +15,7 @@
 import React from 'react';
 import { Cloud, Droplets, Wind, Sun, CloudRain, CloudLightning, Calendar } from 'lucide-react';
 import { ComposedChart, Area, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useTheme } from '../context/ThemeContext'; // Import Context
 
 const formatTime = (isoString) => {
     if (!isoString) return '';
@@ -24,16 +25,26 @@ const formatTime = (isoString) => {
 
 const getWeatherIcon = (desc) => {
     const d = desc?.toLowerCase() || '';
-    if (d.includes('mưa')) return <CloudRain className="text-blue-400" size={32} />;
-    if (d.includes('dông') || d.includes('sấm')) return <CloudLightning className="text-purple-400" size={32} />;
+    if (d.includes('mưa')) return <CloudRain className="text-blue-500 dark:text-blue-400" size={32} />;
+    if (d.includes('dông') || d.includes('sấm')) return <CloudLightning className="text-purple-500 dark:text-purple-400" size={32} />;
     if (d.includes('mây') || d.includes('âm u')) return <Cloud className="text-gray-400" size={32} />;
-    return <Sun className="text-yellow-400" size={32} />;
+    return <Sun className="text-yellow-500 dark:text-yellow-400" size={32} />;
 };
 
-// --- NHẬN THÊM PROP locationName ---
 const WeatherWidget = ({ data, locationName }) => {
+    const { theme } = useTheme(); // Lấy theme
+
+    // Cấu hình màu cho biểu đồ
+    const chartColors = {
+        grid: theme === 'dark' ? '#374151' : '#e5e7eb',
+        text: theme === 'dark' ? '#9ca3af' : '#6b7280',
+        tooltipBg: theme === 'dark' ? '#1f2937' : '#ffffff',
+        tooltipText: theme === 'dark' ? '#fff' : '#111827',
+        tooltipBorder: theme === 'dark' ? '#374151' : '#e5e7eb'
+    };
+
     if (!data) return (
-        <div className="bg-[#111318] border border-gray-800 p-6 rounded-3xl h-full flex flex-col items-center justify-center text-gray-500 animate-pulse">
+        <div className="bg-white dark:bg-[#111318] border border-gray-200 dark:border-gray-800 p-6 rounded-3xl h-full flex flex-col items-center justify-center text-gray-400 animate-pulse transition-colors duration-300">
             <Cloud className="mb-2 opacity-50" size={40}/>
             <span>Đang tải dữ liệu thời tiết...</span>
         </div>
@@ -49,36 +60,35 @@ const WeatherWidget = ({ data, locationName }) => {
     }));
 
     return (
-        <div className="bg-[#111318] border border-gray-800 p-6 rounded-3xl shadow-lg flex flex-col h-full relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl pointer-events-none -mr-10 -mt-10"></div>
+        <div className="bg-white dark:bg-[#111318] border border-gray-200 dark:border-gray-800 p-6 rounded-3xl shadow-sm dark:shadow-lg flex flex-col h-full relative overflow-hidden transition-colors duration-300">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-3xl pointer-events-none -mr-10 -mt-10"></div>
 
             {/* 1. Header */}
             <div className="flex justify-between items-start mb-4 z-10 flex-shrink-0">
                 <div>
-                    <h3 className="text-white font-bold text-lg flex items-center mb-1">
-                        {/* HIỂN THỊ TÊN VỊ TRÍ ĐỘNG */}
+                    <h3 className="text-gray-900 dark:text-white font-bold text-lg flex items-center mb-1">
                         {locationName || "Hà Nội, Việt Nam"}
                     </h3>
-                    <p className="text-emerald-400 text-sm font-medium flex items-center">
+                    <p className="text-emerald-600 dark:text-emerald-400 text-sm font-medium flex items-center">
                          {getWeatherIcon(current.desc)} 
-                         <span className="ml-2">{current.desc}</span>
+                         <span className="ml-2 capitalize">{current.desc}</span>
                     </p>
                 </div>
                 <div className="text-right">
-                    <div className="text-5xl font-black text-white tracking-tighter">{current.temp}°</div>
-                    <p className="text-xs text-gray-500 mt-1">{new Date(current.time).toLocaleDateString('vi-VN', {weekday: 'long', day:'numeric', month:'numeric'})}</p>
+                    <div className="text-5xl font-black text-gray-900 dark:text-white tracking-tighter">{current.temp}°</div>
+                    <p className="text-xs text-gray-500 mt-1 capitalize">{new Date(current.time).toLocaleDateString('vi-VN', {weekday: 'long', day:'numeric', month:'numeric'})}</p>
                 </div>
             </div>
 
             {/* 2. Chỉ số phụ */}
             <div className="grid grid-cols-2 gap-4 mb-4 z-10 flex-shrink-0">
-                <div className="bg-gray-800/40 p-3 rounded-2xl border border-gray-700/50 flex items-center">
-                    <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400 mr-3"><Wind size={18}/></div>
-                    <div><span className="block text-white font-bold text-sm">{current.wind_speed} km/h</span><span className="text-[10px] text-gray-500">Tốc độ gió</span></div>
+                <div className="bg-gray-50 dark:bg-gray-800/40 p-3 rounded-2xl border border-gray-100 dark:border-gray-700/50 flex items-center">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-500/20 rounded-lg text-blue-600 dark:text-blue-400 mr-3"><Wind size={18}/></div>
+                    <div><span className="block text-gray-900 dark:text-white font-bold text-sm">{current.wind_speed} km/h</span><span className="text-[10px] text-gray-500">Tốc độ gió</span></div>
                 </div>
-                <div className="bg-gray-800/40 p-3 rounded-2xl border border-gray-700/50 flex items-center">
-                    <div className="p-2 bg-cyan-500/20 rounded-lg text-cyan-400 mr-3"><Droplets size={18}/></div>
-                    <div><span className="block text-white font-bold text-sm">{current.humidity}%</span><span className="text-[10px] text-gray-500">Độ ẩm</span></div>
+                <div className="bg-gray-50 dark:bg-gray-800/40 p-3 rounded-2xl border border-gray-100 dark:border-gray-700/50 flex items-center">
+                    <div className="p-2 bg-cyan-100 dark:bg-cyan-500/20 rounded-lg text-cyan-600 dark:text-cyan-400 mr-3"><Droplets size={18}/></div>
+                    <div><span className="block text-gray-900 dark:text-white font-bold text-sm">{current.humidity}%</span><span className="text-[10px] text-gray-500">Độ ẩm</span></div>
                 </div>
             </div>
 
@@ -90,26 +100,26 @@ const WeatherWidget = ({ data, locationName }) => {
                 </div>
                 <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-                        <defs><linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/><stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/></linearGradient></defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} opacity={0.5} />
-                        <XAxis dataKey="time" stroke="#6b7280" axisLine={false} tickLine={false} tick={{fontSize: 10}} interval={3} />
+                        <defs><linearGradient id="colorTempWidget" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/><stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/></linearGradient></defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} vertical={false} opacity={0.5} />
+                        <XAxis dataKey="time" stroke={chartColors.text} axisLine={false} tickLine={false} tick={{fontSize: 10}} interval={3} />
                         <YAxis yAxisId="left" hide domain={['dataMin - 2', 'dataMax + 2']} />
                         <YAxis yAxisId="right" hide domain={[0, 100]} />
-                        <Tooltip contentStyle={{backgroundColor:'#1f2937', border:'1px solid #374151', borderRadius:'12px', fontSize:'12px'}} itemStyle={{fontWeight:'bold'}} labelStyle={{color:'#9ca3af', marginBottom:'5px'}}/>
+                        <Tooltip contentStyle={{backgroundColor: chartColors.tooltipBg, border: `1px solid ${chartColors.tooltipBorder}`, borderRadius:'12px', fontSize:'12px', color: chartColors.tooltipText}} itemStyle={{fontWeight:'bold'}} labelStyle={{color: chartColors.text, marginBottom:'5px'}}/>
                         <Bar yAxisId="right" dataKey="rain" name="Khả năng mưa" fill="#3b82f6" opacity={0.6} barSize={12} radius={[2, 2, 0, 0]}/>
-                        <Area yAxisId="left" type="monotone" dataKey="temp" name="Nhiệt độ" stroke="#f59e0b" strokeWidth={3} fillOpacity={1} fill="url(#colorTemp)" />
+                        <Area yAxisId="left" type="monotone" dataKey="temp" name="Nhiệt độ" stroke="#f59e0b" strokeWidth={3} fillOpacity={1} fill="url(#colorTempWidget)" />
                     </ComposedChart>
                 </ResponsiveContainer>
             </div>
             
             {/* 4. Dự báo 3 ngày tới */}
             {daily_7days && (
-                <div className="mt-2 pt-3 border-t border-gray-800 space-y-2 z-10 flex-shrink-0">
+                <div className="mt-2 pt-3 border-t border-gray-200 dark:border-gray-800 space-y-2 z-10 flex-shrink-0">
                     {daily_7days.slice(0, 3).map((day, idx) => (
-                        <div key={idx} className="flex justify-between items-center text-xs text-gray-300 hover:bg-gray-800/50 p-1 rounded transition-colors">
+                        <div key={idx} className="flex justify-between items-center text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/50 p-1 rounded transition-colors">
                             <span className="w-24 opacity-70 font-mono">{idx === 0 ? 'Hôm nay' : day.date}</span>
-                            <span className="flex-1 text-center font-medium truncate px-2">{day.desc}</span>
-                            <span className="w-16 text-right font-bold text-white"><span className="opacity-50 text-[10px]">{Math.round(day.temp_min)}°</span> / {Math.round(day.temp_max)}°</span>
+                            <span className="flex-1 text-center font-medium truncate px-2 capitalize">{day.desc}</span>
+                            <span className="w-16 text-right font-bold text-gray-900 dark:text-white"><span className="opacity-50 text-[10px]">{Math.round(day.temp_min)}°</span> / {Math.round(day.temp_max)}°</span>
                         </div>
                     ))}
                 </div>

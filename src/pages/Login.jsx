@@ -17,7 +17,6 @@ import { useNavigate } from 'react-router-dom';
 import { loginUser } from '../services';
 import { Loader2, Lock, User } from 'lucide-react';
 
-// --- IMPORT LOGO ---
 import logoImg from '../assets/logo.png'; 
 
 export default function Login() {
@@ -34,22 +33,18 @@ export default function Login() {
     setError('');
 
     try {
-      // Gọi API đăng nhập
       const data = await loginUser(username, password);
       
       if (data && data.access_token) {
-        // 1. Lưu Token
         localStorage.setItem('access_token', data.access_token);
         
-        // 2. Lưu thông tin người dùng (Giả lập từ username)
         const userInfo = {
             name: username === 'admin' ? 'Quản Trị Viên' : username,
-            email: `${username}@greenmap.vn`, // Email giả lập để hiển thị profile cho đẹp
+            email: `${username}@greenmap.vn`,
             avatar: username.charAt(0).toUpperCase()
         };
         localStorage.setItem('user_info', JSON.stringify(userInfo));
 
-        // 3. Chuyển hướng
         navigate('/dashboard', { replace: true });
       } else {
         setError('Token không hợp lệ hoặc lỗi server.');
@@ -63,25 +58,28 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-      <div className="bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-700">
+    // Sửa nền chính: bg-gray-50 (Sáng) / dark:bg-gray-900 (Tối)
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4 transition-colors duration-300">
+      
+      {/* Sửa Card: bg-white (Sáng) / dark:bg-gray-800 (Tối) */}
+      <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-200 dark:border-gray-700 transition-colors duration-300">
         
         {/* LOGO SECTION */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-emerald-500/10 mb-4 p-4 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+          <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-emerald-500/10 mb-4 p-4 border border-emerald-500/30 shadow-lg">
             <img 
               src={logoImg} 
               alt="GreenMap Logo" 
               className="w-full h-full object-contain" 
             />
           </div>
-          <h1 className="text-3xl font-black text-white tracking-tight">GreenMap Admin</h1>
-          <p className="text-gray-400 text-sm mt-2 font-medium">Hệ thống Quản trị Bản đồ Xanh</p>
+          <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">GreenMap Admin</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-2 font-medium">Hệ thống Quản trị Bản đồ Xanh</p>
         </div>
 
         {/* ERROR MESSAGE */}
         {error && (
-            <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-3 rounded-lg mb-6 text-center text-sm font-medium flex items-center justify-center animate-in fade-in slide-in-from-top-1">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/50 text-red-600 dark:text-red-400 p-3 rounded-lg mb-6 text-center text-sm font-medium flex items-center justify-center animate-in fade-in slide-in-from-top-1">
                 {error}
             </div>
         )}
@@ -89,14 +87,14 @@ export default function Login() {
         {/* LOGIN FORM */}
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">Tài khoản</label>
+            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 ml-1">Tài khoản</label>
             <div className="relative">
-              <User className="absolute left-3.5 top-3 text-gray-500" size={18} />
+              <User className="absolute left-3.5 top-3 text-gray-400" size={18} />
               <input 
                 type="text" 
                 value={username} 
                 onChange={(e) => setUsername(e.target.value)} 
-                className="w-full bg-gray-900/50 border border-gray-600 rounded-xl py-2.5 pl-10 pr-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all placeholder-gray-600" 
+                className="w-full bg-gray-50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-600 rounded-xl py-2.5 pl-10 pr-4 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-600" 
                 placeholder="Nhập username" 
                 required 
               />
@@ -104,14 +102,14 @@ export default function Login() {
           </div>
           
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">Mật khẩu</label>
+            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 ml-1">Mật khẩu</label>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-3 text-gray-500" size={18} />
+              <Lock className="absolute left-3.5 top-3 text-gray-400" size={18} />
               <input 
                 type="password" 
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
-                className="w-full bg-gray-900/50 border border-gray-600 rounded-xl py-2.5 pl-10 pr-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all placeholder-gray-600" 
+                className="w-full bg-gray-50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-600 rounded-xl py-2.5 pl-10 pr-4 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-600" 
                 placeholder="••••••••" 
                 required 
               />
@@ -128,8 +126,8 @@ export default function Login() {
         </form>
 
         <div className="mt-6 text-center">
-            <p className="text-xs text-gray-600">
-                Quên mật khẩu? <span className="text-emerald-500 cursor-pointer hover:underline">Liên hệ kỹ thuật</span>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+                Quên mật khẩu? <span className="text-emerald-600 dark:text-emerald-500 cursor-pointer hover:underline">Liên hệ kỹ thuật</span>
             </p>
         </div>
       </div>
