@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-// --- HÀM CACHE (Giữ nguyên) ---
+// --- HÀM CACHE ---
 const fetchWithCache = async (url, config, ttl = 5 * 60 * 1000) => { 
     const cacheKey = `cache_${url}`;
     const cached = localStorage.getItem(cacheKey);
@@ -40,7 +40,7 @@ const fetchWithCache = async (url, config, ttl = 5 * 60 * 1000) => {
     return data;
 };
 
-// --- HÀM FETCH CHÍNH (ĐÃ SỬA LOGIC CACHE) ---
+// --- HÀM FETCH CHÍNH ---
 export const apiFetch = async (endpoint, options = {}) => {
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
   const url = `${BASE_URL}/${cleanEndpoint}`;
