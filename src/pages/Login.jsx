@@ -116,7 +116,7 @@ export default function Login() {
             <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 ml-1">Email</label>
             <div className="relative">
               <User className="absolute left-3.5 top-3 text-gray-400" size={18} />
-              <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full pl-10 p-2.5 rounded-xl border bg-gray-50 dark:bg-gray-900 dark:text-white dark:border-gray-600" placeholder="admin@greenmap.vn" required />
+              <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full pl-10 p-2.5 rounded-xl border bg-gray-50 dark:bg-gray-900 dark:text-white dark:border-gray-600" placeholder="admin@greenmap.myhou.io.vn" required />
             </div>
           </div>
           <div>

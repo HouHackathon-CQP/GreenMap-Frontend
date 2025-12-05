@@ -14,7 +14,7 @@
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-// --- HÀM CACHE ---
+// --- CẤU HÌNH CACHE (Giữ lại tính năng này cho Weather/Traffic) ---
 const fetchWithCache = async (url, config, ttl = 5 * 60 * 1000) => { 
     const cacheKey = `cache_${url}`;
     const cached = localStorage.getItem(cacheKey);
@@ -46,16 +46,22 @@ export const apiFetch = async (endpoint, options = {}) => {
   const url = `${BASE_URL}/${cleanEndpoint}`;
   
   const token = localStorage.getItem('access_token');
+  
+  // Mặc định là JSON, trừ khi gửi FormData (upload ảnh)
   const headers = {
     'Content-Type': 'application/json',
     ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     ...options.headers,
   };
 
+  // Nếu body là FormData thì trình duyệt tự set Content-Type
+  if (options.body instanceof FormData) {
+      delete headers['Content-Type'];
+  }
+
   const config = { ...options, headers };
 
-  // --- SỬA Ở ĐÂY: CHỈ CACHE THỜI TIẾT & TRAFFIC ---
-  // Các API quản trị (reports, locations...) sẽ LUÔN gọi mới
+  // Logic Cache cho Weather/Traffic (GET method only)
   const shouldCache = (!config.method || config.method === 'GET') && 
                       (url.includes('weather') || url.includes('traffic'));
 
@@ -63,28 +69,58 @@ export const apiFetch = async (endpoint, options = {}) => {
       try {
           return await fetchWithCache(url, config);
       } catch (error) {
-          // Fallback nếu lỗi mạng
+          // Fallback nếu lỗi mạng thì lấy cache cũ
           const cacheKey = `cache_${url}`;
           const cached = localStorage.getItem(cacheKey);
           if (cached) return JSON.parse(cached).data;
-          throw error;
+          // Nếu không có cache thì ném lỗi tiếp xuống dưới
       }
   }
 
-  // Các API khác gọi thẳng (Realtime)
+  // --- GỌI API THỰC TẾ ---
   try {
     const response = await fetch(url, config);
     
-    if (response.status === 401) {
-        localStorage.removeItem('access_token');
-        window.location.href = '/login';
-        throw new Error('Hết phiên đăng nhập');
-    }
-
+    // XỬ LÝ LỖI (QUAN TRỌNG)
     if (!response.ok) {
-      throw new Error(`HTTP Error: ${response.status}`);
+        let errorMessage = `Lỗi hệ thống (${response.status})`;
+        
+        try {
+            // Cố gắng đọc JSON lỗi từ Backend
+            const errorData = await response.json();
+            
+            // Backend FastAPI thường trả về key 'detail'
+            if (errorData.detail) {
+                // Trường hợp 1: detail là chuỗi (Lỗi logic mình tự raise)
+                if (typeof errorData.detail === 'string') {
+                    errorMessage = errorData.detail;
+                } 
+                // Trường hợp 2: detail là mảng (Lỗi validate của Pydantic)
+                else if (Array.isArray(errorData.detail) && errorData.detail.length > 0) {
+                    errorMessage = errorData.detail[0].msg || "Dữ liệu không hợp lệ";
+                }
+            }
+        } catch (e) {
+            // Nếu response không phải JSON (ví dụ lỗi 500 HTML từ server sập)
+            errorMessage = response.statusText || errorMessage;
+        }
+
+        // Xử lý hết hạn Token (401)
+        if (response.status === 401) {
+            console.warn("Token hết hạn hoặc không hợp lệ.");
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('user_info');
+            // Chỉ redirect nếu không phải đang ở trang login để tránh lặp
+            if (!window.location.pathname.includes('/login')) {
+                window.location.href = '/login';
+            }
+        }
+        
+        // Ném lỗi ra để component (Login/Settings) bắt được và hiển thị
+        throw new Error(errorMessage);
     }
     
+    // Nếu OK thì trả về data
     return await response.json();
     
   } catch (error) {
