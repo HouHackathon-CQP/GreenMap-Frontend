@@ -14,9 +14,8 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; 
-import { loginUser } from '../services';
-import { Loader2, Lock, User } from 'lucide-react';
-
+import { loginUser, fetchUsers } from '../services'; // Import fetchUsers
+import { Loader2, Lock, User, ShieldAlert } from 'lucide-react';
 import logoImg from '../assets/logo.png'; 
 
 export default function Login() {
@@ -33,15 +32,50 @@ export default function Login() {
     setError('');
 
     try {
+      // BƯỚC 1: Login để lấy Token
       const data = await loginUser(username, password);
       
       if (data && data.access_token) {
         localStorage.setItem('access_token', data.access_token);
         
+        // BƯỚC 2: TỰ TÌM THÔNG TIN CỦA CHÍNH MÌNH (LẤY ID & ROLE)
+        // Vì API login không trả về ID, ta phải tìm trong danh sách users
+        let currentUser = null;
+        try {
+            // Lấy 100 user đầu tiên để tìm
+            const usersList = await fetchUsers(0, 100);
+            
+            // Tìm user có email trùng với username vừa nhập
+            currentUser = usersList.find(u => 
+                u.email.toLowerCase() === username.trim().toLowerCase()
+            );
+        } catch (err) {
+            console.warn("Không thể tải danh sách user để xác thực quyền.");
+        }
+
+        // BƯỚC 3: XÁC ĐỊNH ROLE & ID
+        // Nếu tìm thấy trong DB thì dùng data thật, nếu không thì fallback (để test)
+        const userRole = currentUser ? currentUser.role : (username.includes('admin') ? 'ADMIN' : 'CITIZEN');
+        const userId = currentUser ? currentUser.id : null;
+        const fullName = currentUser ? currentUser.full_name : username;
+
+        // BƯỚC 4: CHẶN QUYỀN (Chỉ Admin/Manager được vào)
+        if (userRole !== 'ADMIN' && userRole !== 'MANAGER') {
+            throw new Error('Tài khoản của bạn không có quyền truy cập trang Quản trị.');
+        }
+
+        if (!userId && userRole !== 'ADMIN') {
+             // Nếu không tìm thấy ID mà cũng không phải Admin hardcode -> Cảnh báo
+             console.warn("Cảnh báo: Đăng nhập thành công nhưng không tìm thấy ID user.");
+        }
+
+        // BƯỚC 5: LƯU LOCALSTORAGE (QUAN TRỌNG: PHẢI CÓ ID)
         const userInfo = {
-            name: username === 'admin' ? 'Quản Trị Viên' : username,
-            email: `${username}@greenmap.vn`,
-            avatar: username.charAt(0).toUpperCase()
+            id: userId,          // Đây là cái Settings cần
+            name: fullName,
+            email: username,
+            role: userRole,
+            avatar: fullName.charAt(0).toUpperCase()
         };
         localStorage.setItem('user_info', JSON.stringify(userInfo));
 
@@ -51,85 +85,51 @@ export default function Login() {
       }
     } catch (err) {
       console.error(err);
-      setError('Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản.');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('user_info');
+      setError(err.message || 'Đăng nhập thất bại.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    // Sửa nền chính: bg-gray-50 (Sáng) / dark:bg-gray-900 (Tối)
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4 transition-colors duration-300">
-      
-      {/* Sửa Card: bg-white (Sáng) / dark:bg-gray-800 (Tối) */}
-      <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-200 dark:border-gray-700 transition-colors duration-300">
-        
-        {/* LOGO SECTION */}
+      <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-200 dark:border-gray-700">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-emerald-500/10 mb-4 p-4 border border-emerald-500/30 shadow-lg">
-            <img 
-              src={logoImg} 
-              alt="GreenMap Logo" 
-              className="w-full h-full object-contain" 
-            />
+            <img src={logoImg} alt="GreenMap Logo" className="w-full h-full object-contain" />
           </div>
-          <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">GreenMap Admin</h1>
+          <h1 className="text-3xl font-black text-gray-900 dark:text-white">GreenMap Admin</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-2 font-medium">Hệ thống Quản trị Bản đồ Xanh</p>
         </div>
 
-        {/* ERROR MESSAGE */}
         {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/50 text-red-600 dark:text-red-400 p-3 rounded-lg mb-6 text-center text-sm font-medium flex items-center justify-center animate-in fade-in slide-in-from-top-1">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/50 text-red-600 dark:text-red-400 p-3 rounded-lg mb-6 text-sm font-bold flex items-center animate-in fade-in slide-in-from-top-1">
+                <ShieldAlert size={18} className="mr-2 flex-shrink-0"/>
                 {error}
             </div>
         )}
 
-        {/* LOGIN FORM */}
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 ml-1">Tài khoản</label>
+            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 ml-1">Email</label>
             <div className="relative">
               <User className="absolute left-3.5 top-3 text-gray-400" size={18} />
-              <input 
-                type="text" 
-                value={username} 
-                onChange={(e) => setUsername(e.target.value)} 
-                className="w-full bg-gray-50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-600 rounded-xl py-2.5 pl-10 pr-4 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-600" 
-                placeholder="Nhập username" 
-                required 
-              />
+              <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full pl-10 p-2.5 rounded-xl border bg-gray-50 dark:bg-gray-900 dark:text-white dark:border-gray-600" placeholder="admin@greenmap.vn" required />
             </div>
           </div>
-          
           <div>
             <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 ml-1">Mật khẩu</label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-3 text-gray-400" size={18} />
-              <input 
-                type="password" 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                className="w-full bg-gray-50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-600 rounded-xl py-2.5 pl-10 pr-4 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-600" 
-                placeholder="••••••••" 
-                required 
-              />
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full pl-10 p-2.5 rounded-xl border bg-gray-50 dark:bg-gray-900 dark:text-white dark:border-gray-600" placeholder="••••••••" required />
             </div>
           </div>
-
-          <button 
-            type="submit" 
-            disabled={isLoading} 
-            className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-3 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-900/20 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed mt-4"
-          >
-            {isLoading ? <Loader2 className="animate-spin mr-2" /> : 'Đăng Nhập Hệ Thống'}
+          <button type="submit" disabled={isLoading} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-70">
+            {isLoading ? <Loader2 className="animate-spin" /> : 'Đăng Nhập'}
           </button>
         </form>
-
-        <div className="mt-6 text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-                Quên mật khẩu? <span className="text-emerald-600 dark:text-emerald-500 cursor-pointer hover:underline">Liên hệ kỹ thuật</span>
-            </p>
-        </div>
       </div>
     </div>
   );

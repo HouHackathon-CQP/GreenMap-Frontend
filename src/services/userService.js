@@ -13,22 +13,63 @@
 // limitations under the License.
 
 import { apiFetch } from './apiClient';
-import { MOCK_USERS } from './mockData';
 
-export const fetchUsers = async () => {
+// 1. LẤY DANH SÁCH (Hỗ trợ phân trang)
+export const fetchUsers = async (skip = 0, limit = 100) => {
     try {
-        const data = await apiFetch('users');
-        return Array.isArray(data) ? data : MOCK_USERS;
-    } catch {
-        return MOCK_USERS;
+        const params = new URLSearchParams({
+            skip: skip.toString(),
+            limit: limit.toString()
+        });
+        const data = await apiFetch(`users?${params.toString()}`);
+        return Array.isArray(data) ? data : [];
+    } catch (error) {
+        return [];
     }
 };
 
-export const toggleUserStatus = async (id, status) => {
-    try {
-        return await apiFetch(`users/${id}/status`, { 
-            method: 'PUT',
-            body: JSON.stringify({ status }),
-        });
-    } catch { return { success: true }; }
+// 2. LẤY CHI TIẾT
+export const fetchUserById = async (id) => {
+    return await apiFetch(`users/${id}`);
+};
+
+// 3. TẠO MỚI
+export const createUser = async (userData) => {
+    return await apiFetch('users', {
+        method: 'POST',
+        body: JSON.stringify(userData)
+    });
+};
+
+// 4. CẬP NHẬT
+export const updateUser = async (id, userData) => {
+    const payload = {
+        email: userData.email,
+        full_name: userData.full_name,
+        is_active: userData.is_active,
+        role: userData.role
+    };
+    return await apiFetch(`users/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+    });
+};
+
+// 5. XÓA
+export const deleteUser = async (id) => {
+    return await apiFetch(`users/${id}`, {
+        method: 'DELETE'
+    });
+};
+
+// 6. ĐỔI MẬT KHẨU
+export const changePassword = async (currentPassword, newPassword) => {
+    const payload = { 
+        current_password: currentPassword, 
+        new_password: newPassword 
+    };
+    return await apiFetch('users/change-password/me', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+    });
 };
