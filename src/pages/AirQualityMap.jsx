@@ -18,16 +18,15 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { 
   Loader2, Wind, CloudRain, LocateFixed, Car, Sun, 
   TreePine, Zap, Bike, Camera, Info, X, 
-  Thermometer, Droplets, CheckCircle, XCircle, Search, ArrowRight, CircleDot, Building2, Filter
+  Thermometer, Droplets, CheckCircle, XCircle, Search, ArrowRight, Building2, Filter
 } from 'lucide-react';
 import ReactDOMServer from 'react-dom/server';
 import { fetchLiveAQI, fetchTrafficMap, fetchTrafficLive, fetchLocations } from '../services'; 
-import { fetchWeatherStations, fetchWeatherForecast } from '../services/weatherService';
+import { fetchWeatherStations } from '../services/weatherService';
 import { useTheme } from '../context/ThemeContext'; 
 
-// --- CONFIG ---
 const MODE_CONFIG = {
-    AQI: { color: '#10b981', icon: Wind, label: 'Chất lượng KK' },
+    AQI: { color: '#10b981', icon: Wind, label: 'Chất lượng không khí' },
     RAIN: { color: '#3b82f6', icon: CloudRain, label: 'Thời tiết' },
     TRAFFIC: { color: '#f97316', icon: Car, label: 'Giao thông' },
     PUBLIC_PARK: { color: '#22c55e', icon: TreePine, label: 'Công viên' },
@@ -36,34 +35,10 @@ const MODE_CONFIG = {
     TOURIST_ATTRACTION: { color: '#a855f7', icon: Camera, label: 'Du lịch' },
 };
 
-const RADIUS_OPTIONS = [
-    { value: 0, label: 'Tất cả' },
-    { value: 1, label: 'Gần tôi (< 1km)' },
-    { value: 3, label: 'Bán kính 3km' },
-    { value: 5, label: 'Bán kính 5km' },
-    { value: 10, label: 'Bán kính 10km' }
-];
+const RADIUS_OPTIONS = [{ value: 0, label: 'Tất cả' }, { value: 1, label: 'Gần tôi (< 1km)' }, { value: 3, label: 'Bán kính 3km' }, { value: 5, label: 'Bán kính 5km' }, { value: 10, label: 'Bán kính 10km' }];
+const TYPE_TRANSLATION = { 'PUBLIC_PARK': 'Công viên công cộng', 'CHARGING_STATION': 'Trạm sạc xe điện', 'BICYCLE_RENTAL': 'Điểm thuê xe đạp', 'TOURIST_ATTRACTION': 'Điểm tham quan du lịch', 'PostgreSQL': 'CSDL Nội bộ', 'OSM': 'OpenStreetMap' };
+const FIELD_TRANSLATION = { 'location_type': 'Loại hình', 'data_source': 'Nguồn', 'is_active': 'Trạng thái', 'provider': 'Nhà cung cấp', 'address': 'Địa chỉ', 'capacity': 'Sức chứa', 'opening_hours': 'Giờ mở cửa' };
 
-const TYPE_TRANSLATION = {
-    'PUBLIC_PARK': 'Công viên công cộng',
-    'CHARGING_STATION': 'Trạm sạc xe điện',
-    'BICYCLE_RENTAL': 'Điểm thuê xe đạp',
-    'TOURIST_ATTRACTION': 'Điểm tham quan du lịch',
-    'PostgreSQL': 'CSDL Nội bộ',
-    'OSM': 'OpenStreetMap'
-};
-
-const FIELD_TRANSLATION = {
-    'location_type': 'Loại hình',
-    'data_source': 'Nguồn',
-    'is_active': 'Trạng thái',
-    'provider': 'Nhà cung cấp',
-    'address': 'Địa chỉ',
-    'capacity': 'Sức chứa',
-    'opening_hours': 'Giờ mở cửa'
-};
-
-// --- UTILS ---
 const haversineDistance = (coords1, coords2) => {
     if (!coords1 || !coords2) return null;
     const toRad = (x) => (x * Math.PI) / 180;
@@ -81,12 +56,10 @@ const createGeoJSONCircle = (center, radiusInKm, points = 64) => {
     const ret = [];
     const distanceX = km / (111.32 * Math.cos((coords.latitude * Math.PI) / 180));
     const distanceY = km / 110.574;
-
-    let theta, x, y;
     for (let i = 0; i < points; i++) {
-        theta = (i / points) * (2 * Math.PI);
-        x = distanceX * Math.cos(theta);
-        y = distanceY * Math.sin(theta);
+        const theta = (i / points) * (2 * Math.PI);
+        const x = distanceX * Math.cos(theta);
+        const y = distanceY * Math.sin(theta);
         ret.push([coords.longitude + x, coords.latitude + y]);
     }
     ret.push(ret[0]);
@@ -94,7 +67,7 @@ const createGeoJSONCircle = (center, radiusInKm, points = 64) => {
 };
 
 const AirQualityMap = () => {
-  const { theme } = useTheme(); // Vẫn dùng theme để đổi màu nút bấm/sidebar, KHÔNG đổi màu map
+  const { theme } = useTheme();
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]); 
@@ -107,10 +80,8 @@ const AirQualityMap = () => {
   const [trafficStatus, setTrafficStatus] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [isMapReady, setIsMapReady] = useState(false);
-  const [is3DMode, setIs3DMode] = useState(true);
+  const [is3DMode, setIs3DMode] = useState(true); // Mặc định true hoặc false tuỳ bạn, ở đây map khởi tạo pitch 60 nên để true ban đầu cho khớp
   const [selectedStation, setSelectedStation] = useState(null);
-
-  // Search & Filter
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -118,7 +89,6 @@ const AirQualityMap = () => {
   const [filterRadius, setFilterRadius] = useState(0);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
 
-  // 1. LOGIC LỌC
   const currentDataList = useMemo(() => {
       let sourceList = [];
       if (viewMode === 'AQI') sourceList = aqiData;
@@ -152,7 +122,6 @@ const AirQualityMap = () => {
       setSearchResults(results);
   }, [searchTerm, currentDataList]);
 
-  // 2. MAP UTILS
   const loadIconsToMap = (map) => {
       ['PUBLIC_PARK', 'CHARGING_STATION', 'BICYCLE_RENTAL', 'TOURIST_ATTRACTION'].forEach(key => {
           const config = MODE_CONFIG[key];
@@ -170,31 +139,49 @@ const AirQualityMap = () => {
       let labelLayerId;
       const layers = map.getStyle().layers;
       for (let i = 0; i < layers.length; i++) { if (layers[i].type === 'symbol' && layers[i].layout['text-field']) { labelLayerId = layers[i].id; break; } }
+      
       map.addLayer({
           'id': '3d-buildings', 'source': 'openfreemap-3d', 'source-layer': 'building', 'type': 'fill-extrusion', 'minzoom': 14, 'filter': ['!=', ['get', 'hide_3d'], true],
           'paint': {
-              // --- FIX: Luôn dùng màu sáng cho tòa nhà, không đổi theo theme ---
-              'fill-extrusion-color': ['interpolate', ['linear'], ['get', 'render_height'], 0, '#e5e7eb', 200, '#60a5fa', 400, '#2563eb'],
-              'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 14, 0, 15.5, ['get', 'render_height']],
-              'fill-extrusion-base': ['case', ['>=', ['get', 'zoom'], 15.5], ['get', 'render_min_height'], 0],
+              'fill-extrusion-color': [
+                  'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 0],
+                  0, '#e5e7eb', 200, '#60a5fa', 400, '#2563eb'
+              ],
+              'fill-extrusion-height': [
+                  'interpolate', ['linear'], ['zoom'],
+                  14, 0, 15.5, ['coalesce', ['get', 'render_height'], 0]
+              ],
+              'fill-extrusion-base': [
+                  'case', ['>=', ['get', 'zoom'], 15.5],
+                  ['coalesce', ['get', 'render_min_height'], 0], 0
+              ],
               'fill-extrusion-opacity': 0.8
           }
       }, labelLayerId);
   };
 
-  // --- 3. KHỞI TẠO MAP (CỐ ĐỊNH STYLE BRIGHT) ---
   useEffect(() => {
     if (mapInstanceRef.current) return;
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      // --- FIX: Luôn dùng Bright Style ---
       style: 'https://tiles.openfreemap.org/styles/bright', 
       center: [105.83, 21.02], zoom: 15, pitch: 60, bearing: -10, antialias: true,
     });
     mapInstanceRef.current = map;
+    
+    // Vì pitch mặc định là 60 nên set state là true luôn
+    setIs3DMode(true); 
+
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
 
-    map.on('styleimagemissing', (e) => { if (!map.hasImage(e.id)) { const img = new Image(1,1); img.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAA1JREFUGFdj+P///38ACfsD/QVkeKcAAAAASUVORK5CYII='; img.onload = ()=>map.addImage(e.id, img); } });
+    map.on('styleimagemissing', (e) => {
+        const id = e.id;
+        if (!map.hasImage(id)) {
+            const image = new Image(1, 1);
+            image.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAA1JREFUGFdj+P///38ACfsD/QVkeKcAAAAASUVORK5CYII=';
+            image.onload = () => { if (!map.hasImage(id)) map.addImage(id, image); };
+        }
+    });
 
     map.on('load', async () => {
         loadIconsToMap(map);
@@ -217,7 +204,16 @@ const AirQualityMap = () => {
         map.addLayer({ id: 'unclustered-point', type: 'symbol', source: 'locations-source', filter: ['!has', 'point_count'], layout: { 'icon-image': ['concat', 'icon-', ['get', 'type']], 'icon-size': 1, 'icon-anchor': 'bottom', 'icon-allow-overlap': true } });
 
         map.on('click', 'clusters', async (e) => { const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] }); const clusterId = features[0].properties.cluster_id; const source = map.getSource('locations-source'); const zoom = await source.getClusterExpansionZoom(clusterId); map.easeTo({ center: features[0].geometry.coordinates, zoom }); });
-        map.on('click', 'unclustered-point', (e) => { const props = e.features[0].properties; const coords = e.features[0].geometry.coordinates; setSelectedStation({ ...props, latitude: coords[1], longitude: coords[0] }); map.flyTo({ center: coords, zoom: 16, pitch: 60, speed: 1.5 }); });
+        
+        // --- CLICK ĐIỂM TRÊN BẢN ĐỒ (Mode không phải AQI) ---
+        map.on('click', 'unclustered-point', (e) => { 
+            const props = e.features[0].properties; 
+            const coords = e.features[0].geometry.coordinates; 
+            setSelectedStation({ ...props, latitude: coords[1], longitude: coords[0] }); 
+            map.flyTo({ center: coords, zoom: 16, pitch: 60, speed: 1.5 });
+            setIs3DMode(true); // [FIX] Cập nhật state 3D
+        });
+        
         map.on('mouseenter', 'clusters', () => map.getCanvas().style.cursor = 'pointer'); map.on('mouseleave', 'clusters', () => map.getCanvas().style.cursor = '');
         map.on('mouseenter', 'unclustered-point', () => map.getCanvas().style.cursor = 'pointer'); map.on('mouseleave', 'unclustered-point', () => map.getCanvas().style.cursor = '');
 
@@ -225,7 +221,6 @@ const AirQualityMap = () => {
     });
   }, []);
 
-  // --- 4. RADIUS RENDER ---
   useEffect(() => {
       const map = mapInstanceRef.current;
       if (!map || !isMapReady || !map.getSource('radius-overlay')) return;
@@ -236,9 +231,6 @@ const AirQualityMap = () => {
       }
   }, [userLocation, filterRadius, isMapReady]);
 
-  // --- FIX: BỎ USEEFFECT THEME WATCHER ĐỂ KHÔNG ĐỔI STYLE MAP ---
-
-  // Load Data
   useEffect(() => {
       const loadAllData = async () => {
           setIsLoading(true);
@@ -255,7 +247,6 @@ const AirQualityMap = () => {
       if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p => setUserLocation([p.coords.longitude, p.coords.latitude]), () => {});
   }, []);
 
-  // Render Logic
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !isMapReady || !map.getSource('locations-source')) return;
@@ -276,7 +267,14 @@ const AirQualityMap = () => {
             const icon = viewMode === 'AQI' ? <Wind size={16}/> : (item.isRaining ? <CloudRain size={16}/> : <Sun size={16}/>);
             const el = document.createElement('div'); el.className = 'custom-marker-container'; el.style.cursor = 'pointer';
             el.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; background: ${color}; border: 2px solid white; border-radius: 20px; padding: 4px 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); color: white; min-width: 60px;"><div style="margin-right: 4px; display: flex;">${ReactDOMServer.renderToString(icon)}</div><span style="font-weight: 800; font-size: 13px;">${val}</span></div><div style="width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid ${color}; margin: -1px auto 0;"></div>`;
-            el.addEventListener('click', (e) => { e.stopPropagation(); setSelectedStation({ ...item, type: viewMode, displayColor: color, latitude: coords[1], longitude: coords[0] }); map.flyTo({ center: coords, zoom: 16, pitch: 60 }); });
+            
+            // --- CLICK MARKER (Mode AQI/RAIN) ---
+            el.addEventListener('click', (e) => { 
+                e.stopPropagation(); 
+                setSelectedStation({ ...item, type: viewMode, displayColor: color, latitude: coords[1], longitude: coords[0] }); 
+                map.flyTo({ center: coords, zoom: 16, pitch: 60 });
+                setIs3DMode(true); // [FIX] Cập nhật state 3D
+            });
             markersRef.current.push(new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat(coords).addTo(map));
         });
     } else if (!isTraffic) {
@@ -299,7 +297,10 @@ const AirQualityMap = () => {
       navigator.geolocation.getCurrentPosition((pos) => {
           const coords = [pos.coords.longitude, pos.coords.latitude];
           setUserLocation(coords);
-          if(zoomTo) map.flyTo({ center: coords, zoom: 15, pitch: 60 });
+          if(zoomTo) {
+              map.flyTo({ center: coords, zoom: 15, pitch: 60 });
+              setIs3DMode(true); // [FIX] Cập nhật state 3D khi locate me
+          }
           if(userMarkerRef.current) userMarkerRef.current.remove();
           const el = document.createElement('div');
           el.innerHTML = `<div class="relative flex items-center justify-center"><div class="animate-ping absolute inline-flex h-24 w-24 rounded-full bg-blue-500 opacity-20" style="animation-duration: 2s;"></div><div class="animate-ping absolute inline-flex h-12 w-12 rounded-full bg-blue-500 opacity-40" style="animation-duration: 1.5s;"></div><div class="relative inline-flex rounded-full h-5 w-5 bg-blue-600 border-2 border-white shadow-lg z-10"></div></div>`;
@@ -314,15 +315,14 @@ const AirQualityMap = () => {
       else if (item.location?.coordinates) { lat = item.location.coordinates[1]; lon = item.location.coordinates[0]; }
       else { lat = item.latitude; lon = item.longitude; }
       
-      // Tính màu sắc hiển thị
       let displayColor = MODE_CONFIG[viewMode].color;
       if (viewMode === 'AQI') { displayColor = item.value <= 50 ? '#10b981' : item.value <= 100 ? '#eab308' : '#ef4444'; }
       else if (viewMode === 'RAIN') { displayColor = item.isRaining ? '#3b82f6' : '#f59e0b'; }
 
       setSelectedStation({ ...item, type: viewMode, displayColor, latitude: lat, longitude: lon });
-      
       if (mapInstanceRef.current && lat && lon) {
           mapInstanceRef.current.flyTo({ center: [lon, lat], zoom: 17, pitch: 60, speed: 1.5 });
+          setIs3DMode(true); // [FIX] Cập nhật state 3D khi search
       }
   };
 
@@ -335,8 +335,6 @@ const AirQualityMap = () => {
 
   return (
     <div className="h-full w-full flex flex-col relative bg-white dark:bg-[#0a0a0a] rounded-3xl border border-gray-200 dark:border-gray-800/50 shadow-sm dark:shadow-2xl overflow-hidden group transition-colors duration-300">
-      
-      {/* TOOLBAR & SEARCH */}
       <div className="absolute top-4 left-4 right-4 z-20 flex flex-col gap-3 pointer-events-none">
           <div className="bg-white/90 dark:bg-black/80 backdrop-blur-xl border border-gray-200 dark:border-white/10 p-2 rounded-2xl shadow-xl flex flex-wrap gap-3 pointer-events-auto items-center max-w-4xl mx-auto">
              <div className="flex gap-1 overflow-x-auto custom-scrollbar max-w-[50vw] md:max-w-none pb-1 md:pb-0">
@@ -362,16 +360,13 @@ const AirQualityMap = () => {
           </div>
       </div>
 
-      {/* LEGEND TRAFFIC */}
       {viewMode === 'TRAFFIC' && (<div className="absolute top-20 right-4 z-10 bg-white/90 dark:bg-black/80 backdrop-blur border border-gray-200 dark:border-gray-700 p-3 rounded-xl shadow-lg text-xs font-medium space-y-2 text-gray-700 dark:text-gray-300 pointer-events-none"><div className="flex items-center"><div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div> Tắc nghẽn</div><div className="flex items-center"><div className="w-3 h-3 bg-orange-500 rounded-full mr-2"></div> Đông xe</div><div className="flex items-center"><div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div> Thông thoáng</div></div>)}
 
-      {/* BOTTOM RIGHT ACTIONS */}
       <div className="absolute bottom-6 right-6 z-10 flex flex-col gap-3 pointer-events-auto">
           <button onClick={toggle3D} className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg backdrop-blur transition-all active:scale-95 border border-gray-200 dark:border-gray-700 ${is3DMode ? 'bg-emerald-500 text-white border-transparent shadow-emerald-500/30' : 'bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800'}`} title="Bật/Tắt 3D"><Building2 size={18} className={is3DMode ? 'animate-pulse' : ''} /></button>
           <button onClick={() => handleLocateMe(true)} className="flex items-center justify-center w-12 h-12 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-lg shadow-blue-500/30 transition-transform active:scale-95 border border-white/20"><LocateFixed size={24} /></button>
       </div>
 
-      {/* SIDEBAR DETAIL (Giữ nguyên) */}
       {selectedStation && viewMode !== 'TRAFFIC' && (
          <div className="absolute z-30 bottom-4 left-4 right-4 md:left-auto md:right-4 md:bottom-4 md:w-96 bg-white/95 dark:bg-[#111318]/90 backdrop-blur-2xl border border-gray-200 dark:border-white/10 rounded-3xl shadow-2xl animate-in fade-in duration-300 overflow-hidden flex flex-col max-h-[70vh]">
              <div className="h-20 w-full relative overflow-hidden flex-shrink-0">
@@ -384,9 +379,7 @@ const AirQualityMap = () => {
                  <h3 className="text-xl font-bold text-gray-900 dark:text-white leading-tight mb-1">{selectedStation.name || selectedStation.station_name || 'Không tên'}</h3>
                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider mb-4 border-b border-gray-200 dark:border-gray-800 pb-3">{MODE_CONFIG[selectedStation.type]?.label}</p>
                  <div className="space-y-4">
-                     {/* AQI/RAIN Detail */}
-                     {['AQI', 'RAIN'].includes(selectedStation.type) && (<div className="grid grid-cols-3 gap-2"><div className="bg-gray-50 dark:bg-white/5 p-2 rounded-xl border border-gray-100 dark:border-white/5 text-center"><div className="flex justify-center mb-1 text-gray-400"><Thermometer size={14}/></div><div className="font-bold text-gray-800 dark:text-white">{selectedStation.temperature}°</div><div className="text-[10px] text-gray-500">Nhiệt độ</div></div><div className="bg-gray-50 dark:bg-white/5 p-2 rounded-xl border border-gray-100 dark:border-white/5 text-center"><div className="flex justify-center mb-1 text-blue-400"><Droplets size={14}/></div><div className="font-bold text-gray-800 dark:text-white">{selectedStation.humidity}%</div><div className="text-[10px] text-gray-500">Độ ẩm</div></div><div className="bg-gray-50 dark:bg-white/5 p-2 rounded-xl border border-gray-100 dark:border-white/5 text-center"><div className="flex justify-center mb-1 text-green-400"><Wind size={14}/></div><div className="font-bold text-gray-800 dark:text-white">{selectedStation.wind_speed}</div><div className="text-[10px] text-gray-500">Gió (m/s)</div></div>{selectedStation.type === 'AQI' && (<div className="col-span-3 bg-gray-50 dark:bg-white/5 p-3 rounded-xl border border-gray-100 dark:border-white/5 flex justify-between items-center mt-1"><span className="text-xs font-bold text-gray-500">Chỉ số AQI</span><span className={`text-2xl font-black ${selectedStation.value > 100 ? 'text-red-500' : selectedStation.value > 50 ? 'text-yellow-500' : 'text-green-500'}`}>{selectedStation.value}</span></div>)}</div>)}
-                     {/* Location Detail */}
+                     {['AQI', 'RAIN'].includes(selectedStation.type) && (<div className="grid grid-cols-3 gap-2"><div className="bg-gray-50 dark:bg-white/5 p-2 rounded-xl border border-gray-100 dark:border-white/5 text-center"><div className="flex justify-center mb-1 text-gray-400"><Thermometer size={14}/></div><div className="font-bold text-gray-800 dark:text-white">{selectedStation.temperature}°</div><div className="text-[10px] text-gray-500">Nhiệt độ</div></div><div className="bg-gray-50 dark:bg-white/5 p-2 rounded-xl border border-gray-100 dark:border-white/5 text-center"><div className="flex justify-center mb-1 text-blue-400"><Droplets size={14}/></div><div className="font-bold text-gray-800 dark:text-white">{selectedStation.humidity}%</div><div className="text-[10px] text-gray-500">Độ ẩm</div></div><div className="bg-gray-50 dark:bg-white/5 p-2 rounded-xl border border-gray-100 dark:border-white/5 text-center"><div className="flex justify-center mb-1 text-green-400"><Wind size={14}/></div><div className="font-bold text-gray-800 dark:text-white">{selectedStation.wind_speed || selectedStation.windSpeed || '--'}</div><div className="text-[10px] text-gray-500">Gió (m/s)</div></div>{selectedStation.type === 'AQI' && (<div className="col-span-3 bg-gray-50 dark:bg-white/5 p-3 rounded-xl border border-gray-100 dark:border-white/5 flex justify-between items-center mt-1"><span className="text-xs font-bold text-gray-500">Chỉ số AQI</span><span className={`text-2xl font-black ${selectedStation.value > 100 ? 'text-red-500' : selectedStation.value > 50 ? 'text-yellow-500' : 'text-green-500'}`}>{selectedStation.value}</span></div>)}</div>)}
                      {!['AQI', 'RAIN'].includes(selectedStation.type) && (<div className="space-y-2">{selectedStation.description && (<div className="bg-gray-50 dark:bg-white/5 p-3 rounded-xl border border-gray-200 dark:border-white/5 mb-3"><p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed italic">"{selectedStation.description}"</p></div>)}{Object.entries(selectedStation).map(([key, value]) => {if (['id', 'name', 'station_name', 'description', 'type', 'color', 'value', 'temperature', 'humidity', 'wind_speed', 'coords', 'latitude', 'longitude', 'distance'].includes(key)) return null;if (value === null || value === undefined || value === '') return null;let label = FIELD_TRANSLATION[key] || key.replace(/_/g, ' '); let content = value;if (key === 'location_type') content = TYPE_TRANSLATION[value] || value;else if (key === 'is_active') content = value ? <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center justify-end"><CheckCircle size={12} className="mr-1"/> Hoạt động</span> : <span className="text-red-500 font-bold flex items-center justify-end"><XCircle size={12} className="mr-1"/> Tạm ngừng</span>;else if (key === 'data_source' && TYPE_TRANSLATION[value]) content = TYPE_TRANSLATION[value];return (<div key={key} className="flex justify-between items-start text-sm border-b border-gray-100 dark:border-gray-800 pb-2 last:border-0"><span className="text-gray-500 dark:text-gray-400 font-medium capitalize text-xs">{label}</span><span className="text-gray-900 dark:text-gray-200 font-semibold text-right max-w-[65%] text-xs break-words">{content}</span></div>);})}</div>)}
                      <div className="flex justify-center pt-2"><span className="text-[10px] text-gray-400 dark:text-gray-600 font-mono bg-gray-100 dark:bg-white/5 px-2 py-1 rounded">{selectedStation.latitude?.toFixed(5)}, {selectedStation.longitude?.toFixed(5)} {selectedStation.distance && <span className="ml-2 text-emerald-500 font-bold">• {selectedStation.distance.toFixed(1)} km</span>}</span></div>
                  </div>
@@ -394,7 +387,6 @@ const AirQualityMap = () => {
          </div>
       )}
 
-      {/* MAP AREA */}
       <div className="flex-1 relative z-0">
         <div ref={mapContainerRef} className="absolute inset-0 w-full h-full" />
         {isLoading && <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 dark:bg-black/80 backdrop-blur-sm z-50"><Loader2 className="animate-spin text-emerald-500 mb-3" size={48}/><span className="text-emerald-500 font-bold text-sm tracking-widest animate-pulse">ĐANG ĐỒNG BỘ...</span></div>}
