@@ -14,36 +14,39 @@
 
 import { apiFetch } from './apiClient';
 
-// --- ĐĂNG NHẬP (GIỮ NGUYÊN) ---
+// --- ĐĂNG NHẬP ---
 export const loginUser = async (username, password) => {
   try {
+    // Backend dùng schemas.LoginRequest -> Gửi JSON
     return await apiFetch('login', { 
         method: 'POST', 
-        body: JSON.stringify({ username, password }) 
+        body: JSON.stringify({ 
+            email: username, 
+            password: password 
+        }) 
     });
   } catch (e) {
-    console.error("Login Error:", e);
+    // Ném lỗi tiếp để Login.jsx hiển thị (setError)
     throw e;
   }
 };
 
-// --- ĐĂNG XUẤT (MỚI) ---
+// --- ĐĂNG XUẤT ---
 export const logoutUser = async () => {
-  // Lấy token hiện tại
   const token = localStorage.getItem('access_token');
   
-  // Nếu không có token thì không cần gọi API
+  // Nếu không có token thì thôi, chỉ cần xóa ở client
   if (!token) return;
 
   try {
+    // Gọi API để Backend ghi log
     await apiFetch('logout', { 
         method: 'POST',
         headers: {
-            // Quan trọng: Gửi kèm Token để backend biết ai đang logout
             'Authorization': `Bearer ${token}`
         }
     });
   } catch (error) {
-    console.warn("API Logout warning:", error);
+    console.warn("Lỗi gọi API logout (có thể bỏ qua):", error);
   }
 };

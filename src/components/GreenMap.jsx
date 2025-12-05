@@ -15,7 +15,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { fetchLiveAQI } from '../services'; // Bỏ fetchTraffic
+import { fetchLiveAQI } from '../services'; 
 import { Loader2, Navigation } from 'lucide-react';
 
 const GreenMap = ({ onStationSelect }) => {
@@ -51,7 +51,8 @@ const GreenMap = ({ onStationSelect }) => {
             const { latitude, longitude, accuracy } = position.coords;
             const userCoords = [longitude, latitude];
 
-            map.flyTo({ center: userCoords, zoom: 15, speed: 1.5 });
+            // Zoom sâu hơn (16) và nghiêng (60) để thấy rõ 3D Building
+            map.flyTo({ center: userCoords, zoom: 16, pitch: 60, speed: 1.5 });
 
             const el = document.createElement('div');
             el.className = 'user-location-marker';
@@ -79,10 +80,10 @@ const GreenMap = ({ onStationSelect }) => {
       container: mapContainerRef.current,
       style: 'https://tiles.openfreemap.org/styles/bright',
       center: [105.80, 21.02],
-      zoom: 12.5,
-      pitch: 60,
-      bearing: -10,
-      antialias: true,
+      zoom: 15, // Zoom mặc định gần hơn để thấy tòa nhà ngay
+      pitch: 45, // Độ nghiêng mặc định
+      bearing: -17.6,
+      antialias: true, // Quan trọng để render 3D mượt mà
     });
     mapInstanceRef.current = map;
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
@@ -90,6 +91,65 @@ const GreenMap = ({ onStationSelect }) => {
     map.on('load', async () => {
       map.resize();
       handleLocateUser();
+
+      // --- 3D BUILDINGS SETUP (BẮT ĐẦU) ---
+      
+      // 1. Tìm layer chữ (symbol) để chèn tòa nhà xuống dưới chữ
+      const layers = map.getStyle().layers;
+      let labelLayerId;
+      for (let i = 0; i < layers.length; i++) {
+          if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
+              labelLayerId = layers[i].id;
+              break;
+          }
+      }
+
+      // 2. Thêm Source OpenFreeMap Planet (Vector Tiles)
+      if (!map.getSource('openfreemap')) {
+          map.addSource('openfreemap', {
+              url: 'https://tiles.openfreemap.org/planet',
+              type: 'vector',
+          });
+      }
+
+      // 3. Thêm Layer 3D Buildings
+      if (!map.getLayer('3d-buildings')) {
+          map.addLayer({
+              'id': '3d-buildings',
+              'source': 'openfreemap',
+              'source-layer': 'building',
+              'type': 'fill-extrusion',
+              'minzoom': 15, // Chỉ hiển thị khi zoom >= 15
+              'filter': ['!=', ['get', 'hide_3d'], true],
+              'paint': {
+                  // Nội suy màu dựa trên chiều cao: Thấp (xám) -> Cao (xanh dương)
+                  'fill-extrusion-color': [
+                      'interpolate',
+                      ['linear'],
+                      ['get', 'render_height'],
+                      0, '#d1d5db',     // Gray-300
+                      200, '#3b82f6',   // Blue-500
+                      400, '#1d4ed8'    // Blue-700
+                  ],
+                  // Nội suy chiều cao dựa trên zoom: Zoom 15 phẳng, Zoom 16 cao thật
+                  'fill-extrusion-height': [
+                      'interpolate',
+                      ['linear'],
+                      ['zoom'],
+                      15, 0,
+                      16, ['get', 'render_height']
+                  ],
+                  'fill-extrusion-base': [
+                      'case',
+                      ['>=', ['get', 'zoom'], 16],
+                      ['get', 'render_min_height'], 
+                      0
+                  ],
+                  'fill-extrusion-opacity': 0.8 // Làm trong suốt nhẹ để đỡ che bản đồ
+              }
+          }, labelLayerId); // Chèn layer này TRƯỚC layer nhãn
+      }
+      // --- 3D BUILDINGS SETUP (KẾT THÚC) ---
 
       map.on('styleimagemissing', (e) => {
         if (!map.hasImage(e.id)) {
@@ -102,6 +162,7 @@ const GreenMap = ({ onStationSelect }) => {
         map.addSource('aqi-sensors', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       }
 
+      // Layer AQI sẽ nằm đè lên layer 3D Buildings vì được add sau
       if (!map.getLayer('aqi-points')) {
         map.addLayer({
           id: 'aqi-points',
@@ -127,7 +188,8 @@ const GreenMap = ({ onStationSelect }) => {
             ...feature.properties,
             coordinates: { longitude: feature.geometry.coordinates[0], latitude: feature.geometry.coordinates[1] }
           });
-          map.flyTo({ center: feature.geometry.coordinates, zoom: 14, pitch: 60, speed: 1.2 });
+          // Khi click vào trạm, zoom vào và giữ độ nghiêng để xem 3D xung quanh
+          map.flyTo({ center: feature.geometry.coordinates, zoom: 16.5, pitch: 55, speed: 1.2 });
         }
       });
 
