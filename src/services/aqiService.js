@@ -14,7 +14,7 @@
 
 import { apiFetch } from './apiClient';
 import { FALLBACK_AQI_DATA } from './mockData';
-import { pm25ToAQI } from '../utils/aqiCalculator'; 
+import { pm25ToAQI_VN } from '../utils/aqiCalculator'; 
 
 const AQI_CACHE_KEY = 'greenmap_aqi_cache';
 const CACHE_TTL = 5 * 60 * 1000;
@@ -41,8 +41,8 @@ export const fetchLiveAQI = async () => {
         const valPM25 = item[pm25Key]?.value;
         const cleanPM25 = (valPM25 !== null && valPM25 !== undefined) ? Number(valPM25) : null;
         
-        // --- QUAN TRỌNG: Đổi sang AQI ---
-        const aqiValue = cleanPM25 ? pm25ToAQI(cleanPM25) : null;
+        // --- QUAN TRỌNG: Đổi sang AQI theo quy chuẩn VN (TT 02/2022/TT-BTNMT) ---
+        const aqiValue = cleanPM25 ? pm25ToAQI_VN(cleanPM25) : null;
 
         return {
             sensor_id: item.id,
