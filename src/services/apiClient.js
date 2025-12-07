@@ -14,33 +14,32 @@
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-// --- HÀM CACHE ---
+// Simple caching for weather and traffic data
 const fetchWithCache = async (url, config, ttl = 5 * 60 * 1000) => { 
-    const cacheKey = `cache_${url}`;
-    const cached = localStorage.getItem(cacheKey);
+  const cacheKey = `cache_${url}`;
+  const cached = localStorage.getItem(cacheKey);
 
-    if (cached) {
-        try {
-            const { data, timestamp } = JSON.parse(cached);
-            if (Date.now() - timestamp < ttl) {
-                console.log(`⚡ Dùng Cache cho: ${url}`);
-                return data;
-            }
-        } catch (e) { console.warn("Lỗi cache", e); }
-    }
-
-    const response = await fetch(url, config);
-    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-    const data = await response.json();
-
+  if (cached) {
     try {
-        localStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: Date.now() }));
-    } catch (e) {}
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < ttl) {
+        console.log(`Using cache: ${url}`);
+        return data;
+      }
+    } catch (e) { console.warn("Cache error", e); }
+  }
 
-    return data;
+  const response = await fetch(url, config);
+  if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+  const data = await response.json();
+
+  try {
+    localStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: Date.now() }));
+  } catch (e) {}
+
+  return data;
 };
 
-// --- HÀM FETCH CHÍNH ---
 export const apiFetch = async (endpoint, options = {}) => {
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
   const url = `${BASE_URL}/${cleanEndpoint}`;
@@ -54,41 +53,60 @@ export const apiFetch = async (endpoint, options = {}) => {
 
   const config = { ...options, headers };
 
-  // --- SỬA Ở ĐÂY: CHỈ CACHE THỜI TIẾT & TRAFFIC ---
-  // Các API quản trị (reports, locations...) sẽ LUÔN gọi mới
+  // Cache only read-only weather and traffic endpoints
   const shouldCache = (!config.method || config.method === 'GET') && 
                       (url.includes('weather') || url.includes('traffic'));
 
   if (shouldCache) {
-      try {
-          return await fetchWithCache(url, config);
-      } catch (error) {
-          // Fallback nếu lỗi mạng
-          const cacheKey = `cache_${url}`;
-          const cached = localStorage.getItem(cacheKey);
-          if (cached) return JSON.parse(cached).data;
-          throw error;
-      }
+    try {
+      return await fetchWithCache(url, config);
+    } catch (error) {
+      // Fallback to stale cache if network error
+      const cacheKey = `cache_${url}`;
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) return JSON.parse(cached).data;
+      throw error;
+    }
   }
 
-  // Các API khác gọi thẳng (Realtime)
   try {
     const response = await fetch(url, config);
     
+    // Handle authentication errors
     if (response.status === 401) {
+      const errorData = await response.json().catch(() => ({}));
+      if (!url.includes('auth')) {
         localStorage.removeItem('access_token');
+        localStorage.removeItem('user_info');
         window.location.href = '/login';
-        throw new Error('Hết phiên đăng nhập');
+      }
+      throw new Error(errorData?.detail || 'Session expired');
+    }
+
+    // Handle permission errors
+    if (response.status === 403) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData?.detail || 'Access denied');
+    }
+
+    // Handle validation errors
+    if (response.status === 422) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData?.detail || 'Invalid data');
     }
 
     if (!response.ok) {
-      throw new Error(`HTTP Error: ${response.status}`);
+      try {
+        const errorData = await response.json();
+        throw new Error(errorData?.detail || `HTTP Error: ${response.status}`);
+      } catch (e) {
+        throw new Error(`HTTP Error: ${response.status}`);
+      }
     }
     
     return await response.json();
-    
   } catch (error) {
-    console.error('API Request Failed:', error);
+    console.error('API Error:', error);
     throw error;
   }
 };

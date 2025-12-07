@@ -15,7 +15,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { fetchLiveAQI } from '../services'; // Bỏ fetchTraffic
+import { fetchLiveAQI } from '../services';
 import { Loader2, Navigation } from 'lucide-react';
 
 const GreenMap = ({ onStationSelect }) => {
@@ -71,6 +71,55 @@ const GreenMap = ({ onStationSelect }) => {
     );
   };
 
+  // --- HÀM THÊM 3D BUILDINGS ---
+  const add3DBuildings = (map) => {
+    if (map.getLayer('3d-buildings')) return;
+    if (!map.getSource('openfreemap-3d')) {
+      map.addSource('openfreemap-3d', { 
+        url: 'https://tiles.openfreemap.org/planet', 
+        type: 'vector' 
+      });
+    }
+    
+    let labelLayerId;
+    const layers = map.getStyle().layers;
+    for (let i = 0; i < layers.length; i++) { 
+      if (layers[i].type === 'symbol' && layers[i].layout['text-field']) { 
+        labelLayerId = layers[i].id; 
+        break; 
+      } 
+    }
+    
+    map.addLayer({
+      'id': '3d-buildings',
+      'source': 'openfreemap-3d',
+      'source-layer': 'building',
+      'type': 'fill-extrusion',
+      'minzoom': 14,
+      'filter': ['!=', ['get', 'hide_3d'], true],
+      'paint': {
+        'fill-extrusion-color': [
+          'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 0],
+          0, '#e5e7eb',
+          200, '#60a5fa',
+          400, '#2563eb'
+        ],
+        'fill-extrusion-height': [
+          'interpolate', ['linear'], ['zoom'],
+          14, 0,
+          15.5, ['coalesce', ['get', 'render_height'], 0]
+        ],
+        'fill-extrusion-base': [
+          'case',
+          ['>=', ['get', 'zoom'], 15.5],
+          ['coalesce', ['get', 'render_min_height'], 0],
+          0
+        ],
+        'fill-extrusion-opacity': 0.8
+      }
+    }, labelLayerId);
+  };
+
   // --- 2. KHỞI TẠO MAP ---
   useEffect(() => {
     if (mapInstanceRef.current) return;
@@ -90,6 +139,7 @@ const GreenMap = ({ onStationSelect }) => {
     map.on('load', async () => {
       map.resize();
       handleLocateUser();
+      add3DBuildings(map);
 
       map.on('styleimagemissing', (e) => {
         if (!map.hasImage(e.id)) {

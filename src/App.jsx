@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//src/App.jsx
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate, Outlet } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
@@ -30,7 +29,6 @@ import NewsFeed from './pages/NewsFeed';
 import UserManagement from './pages/UserManagement';
 import Landing from './pages/Landing';
 
-// Import thêm hàm logoutUser
 import { logoutUser } from './services'; 
 
 const ProtectedRoute = () => {
@@ -40,7 +38,6 @@ const ProtectedRoute = () => {
 
 const MainLayout = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
   return (
-    // Sửa bg-gray-900 thành bg-gray-100 dark:bg-gray-900
     <div className="flex h-screen w-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-200 font-inter transition-colors duration-300">
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
       <div className="flex-1 flex flex-col h-full overflow-hidden">
@@ -57,7 +54,7 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Tự động logout nếu có sự kiện từ nơi khác (optional)
+  // Tự động logout nếu có sự kiện từ nơi khác
   useEffect(() => {
     const handleAutoLogout = () => {
       localStorage.removeItem('access_token');
@@ -67,7 +64,7 @@ export default function App() {
     return () => window.removeEventListener('auth:logout', handleAutoLogout);
   }, [navigate]);
 
-  // --- HÀM XỬ LÝ LOGOUT (ĐÃ CẬP NHẬT) ---
+  // --- HÀM XỬ LÝ LOGOUT ---
   const handleLogout = async () => {
     try {
         // 1. Gọi API để báo Backend hủy token/session

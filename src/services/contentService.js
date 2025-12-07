@@ -14,61 +14,36 @@
 
 import { apiFetch } from './apiClient';
 
-// Helper: Tính tâm của đa giác (nếu dữ liệu trả về Polygon)
-const getCentroid = (coords) => {
-    if (!coords || coords.length === 0) return { lat: 0, lng: 0 };
-    const points = (Array.isArray(coords[0]) && Array.isArray(coords[0][0])) ? coords[0] : coords;
-    let sumLat = 0, sumLng = 0, count = 0;
-    points.forEach(point => {
-        if (Array.isArray(point) && point.length >= 2) {
-            sumLng += point[0]; sumLat += point[1]; count++;
-        }
-    });
-    return count === 0 ? { lat: 0, lng: 0 } : { latitude: sumLat / count, longitude: sumLng / count };
-};
-
-// Helper: Map dữ liệu từ Backend sang format chuẩn của Frontend
-const mapData = (dataArray, locationType) => {
+const mapData = (dataArray, defaultType) => {
     return dataArray.map(item => {
-        // Tên có thể nằm ở nhiều key khác nhau tùy backend
-        const nameKey = "https://smartdatamodels.org/name";
-        const rawName = item[nameKey] || item.name || `Địa điểm #${item.id}`;
-        
         const loc = item.location || {}; 
         let lat = 0, lng = 0;
-
-        // Xử lý tọa độ
         if (loc.type === 'Point' && loc.coordinates) {
-            lng = loc.coordinates[0]; 
-            lat = loc.coordinates[1];
-        } else if (loc.type === 'Polygon' && loc.coordinates) {
-            const center = getCentroid(loc.coordinates);
-            lat = center.latitude; 
-            lng = center.longitude;
+            lng = loc.coordinates[0]; lat = loc.coordinates[1];
         }
-
+        const id = item.db_id !== undefined && item.db_id !== null ? item.db_id : item.id;
+        const urn = item.id;
+        const locationType = item.location_type || item.type || defaultType;
         return {
-            id: item.id,
-            name: rawName,
-            location_type: item.type || locationType || "UNKNOWN",
-            // Lưu ý: List trả về is_editable, Detail trả về is_active. 
-            // Ta ưu tiên lấy giá trị boolean nếu tồn tại.
-            is_active: item.is_active !== undefined ? item.is_active : (item.is_editable !== undefined ? item.is_editable : true),
+            id,
+            urn,
+            name: item.name || "Không tên",
+            location_type: locationType,
+            is_active: item.is_active !== undefined ? item.is_active : true,
             latitude: lat,
             longitude: lng,
-            description: item.description || "" 
+            description: item.description || "",
+            data_source: item.data_source || "System"
         };
     });
 };
 
-// 1. LẤY DANH SÁCH (GET LIST)
+// 1. LẤY TOÀN BỘ DANH SÁCH
 export const fetchLocations = async (locationType = null) => {
     let allResults = [];
     let skip = 0; 
-    const BATCH_SIZE = 1000; 
+    const BATCH_SIZE = 100;
     let hasMore = true;
-
-    console.log(`🚀 Đang tải dữ liệu ${locationType || ''}...`);
 
     try {
         while (hasMore) {
@@ -76,7 +51,6 @@ export const fetchLocations = async (locationType = null) => {
             params.append('limit', BATCH_SIZE);
             params.append('skip', skip);
             params.append('options', 'keyValues');
-            
             if (locationType) params.append('location_type', locationType);
 
             const chunk = await apiFetch(`locations?${params.toString()}`);
@@ -85,124 +59,41 @@ export const fetchLocations = async (locationType = null) => {
                 const mappedChunk = mapData(chunk, locationType);
                 allResults = [...allResults, ...mappedChunk];
                 
-                if (chunk.length < BATCH_SIZE) {
-                    hasMore = false;
-                } else {
-                    skip += BATCH_SIZE;
-                }
+                if (chunk.length < BATCH_SIZE) hasMore = false;
+                else skip += BATCH_SIZE;
             } else {
                 hasMore = false;
             }
-
-            if (allResults.length > 10000) hasMore = false; // Safety break
+            // Safety break
+            if (allResults.length > 5000) hasMore = false;
         }
         return allResults;
-
     } catch (error) {
         console.error("❌ Lỗi tải danh sách:", error);
         return allResults; 
     }
 };
 
-// 2. LẤY CHI TIẾT (GET BY ID)
+// ... Các hàm create, update, delete, getById
 export const fetchLocationById = async (id) => {
-    try {
-        const response = await apiFetch(`locations/${id}`);
-        return {
-            id: response.id,
-            name: response.name,
-            location_type: response.location_type,
-            description: response.description || "",
-            is_active: response.is_active !== undefined ? response.is_active : true,
-            latitude: response.latitude,
-            longitude: response.longitude,
-            data_source: response.data_source
-        };
-    } catch (error) {
-        console.error(`❌ Lỗi lấy chi tiết [${id}]:`, error);
-        throw error;
-    }
+    try { return await apiFetch(`locations/${id}`); } catch (error) { throw error; }
 };
-
-// 3. TẠO MỚI (POST)
 export const createLocation = async (data) => {
     try {
-        const payload = {
-            name: data.name,
-            location_type: data.location_type,
-            description: data.description || "",
-            latitude: parseFloat(data.latitude),
-            longitude: parseFloat(data.longitude)
-        };
-
-        const response = await apiFetch('locations', {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        });
-
-        // Map kết quả trả về để thêm vào list
-        return {
-            id: response.id || 0, // Fallback nếu backend ko trả ID ngay
-            name: response.name,
-            location_type: response.location_type,
-            description: response.description,
-            is_active: true, // Mặc định tạo mới là active
-            latitude: response.latitude,
-            longitude: response.longitude
-        };
-
-    } catch (error) {
-        console.error("❌ Lỗi tạo mới:", error);
-        throw error;
-    }
+        const payload = { ...data };
+        if (data.latitude !== undefined && data.latitude !== '') payload.latitude = parseFloat(data.latitude);
+        if (data.longitude !== undefined && data.longitude !== '') payload.longitude = parseFloat(data.longitude);
+        return await apiFetch('locations', { method: 'POST', body: JSON.stringify(payload) });
+    } catch (error) { throw error; }
 };
-
-// 4. CẬP NHẬT (PUT)
 export const updateLocation = async (id, data) => {
     try {
-        const payload = {
-            name: data.name,
-            description: data.description || "",
-            location_type: data.location_type,
-            latitude: parseFloat(data.latitude),
-            longitude: parseFloat(data.longitude),
-            is_active: data.is_active !== undefined ? data.is_active : true
-        };
-
-        const response = await apiFetch(`locations/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(payload)
-        });
-
-        return {
-            id: response.id || id,
-            name: response.name,
-            location_type: response.location_type,
-            description: response.description,
-            is_active: response.is_active,
-            latitude: response.latitude,
-            longitude: response.longitude
-        };
-
-    } catch (error) {
-        console.error(`❌ Lỗi cập nhật [${id}]:`, error);
-        throw error;
-    }
+        const payload = { ...data };
+        if (data.latitude !== undefined && data.latitude !== '') payload.latitude = parseFloat(data.latitude);
+        if (data.longitude !== undefined && data.longitude !== '') payload.longitude = parseFloat(data.longitude);
+        return await apiFetch(`locations/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+    } catch (error) { throw error; }
 };
-
-// 5. XÓA (DELETE)
 export const deleteLocation = async (id) => {
-    try {
-        await apiFetch(`locations/${id}`, {
-            method: 'DELETE',
-            headers: { 'accept': 'application/json' }
-        });
-        return { success: true };
-    } catch (error) {
-        console.error(`❌ Lỗi xóa [${id}]:`, error);
-        throw error;
-    }
+    try { await apiFetch(`locations/${id}`, { method: 'DELETE' }); return true; } catch (error) { throw error; }
 };
-
-// Mock Stats (Giữ nguyên để không lỗi Dashboard)
-export const fetchLocationStats = () => Promise.resolve({});

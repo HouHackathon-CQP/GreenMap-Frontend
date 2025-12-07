@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, ChevronDown, Menu, LogOut, Settings, Sun, Moon } from 'lucide-react';
 import { fetchReports } from '../services';
-import { useTheme } from '../context/ThemeContext'; // Import Context
+import { useTheme } from '../context/ThemeContext';
 
 export default function Header({ setIsSidebarOpen, onLogout }) {
-  const { theme, toggleTheme } = useTheme(); // Lấy hàm toggle
+  const { theme, toggleTheme } = useTheme();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -42,7 +42,17 @@ export default function Header({ setIsSidebarOpen, onLogout }) {
     };
 
     const storedUser = localStorage.getItem('user_info');
-    if (storedUser) { try { setUserInfo(JSON.parse(storedUser)); } catch (e) {} }
+    if (storedUser) { 
+      try { 
+        const parsed = JSON.parse(storedUser);
+        setUserInfo({ 
+          name: parsed.full_name || 'Quản Trị Viên',
+          email: parsed.email,
+          role: parsed.role,
+          id: parsed.id
+        }); 
+      } catch (e) {} 
+    }
 
     loadNotifications();
     const interval = setInterval(loadNotifications, 30000);
@@ -61,7 +71,7 @@ export default function Header({ setIsSidebarOpen, onLogout }) {
       
       <div className="flex items-center space-x-2 md:space-x-4">
         
-        {/* --- THEME TOGGLE BUTTON (MỚI) --- */}
+        {/* --- THEME TOGGLE BUTTON --- */}
         <button 
             onClick={toggleTheme} 
             className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors"
@@ -124,10 +134,10 @@ export default function Header({ setIsSidebarOpen, onLogout }) {
         <div className="relative">
           <button onClick={() => setIsUserMenuOpen(!isUserMenuOpen)} className="flex items-center space-x-3 hover:bg-gray-100 dark:hover:bg-gray-800 p-1.5 pl-3 rounded-xl transition-colors border border-transparent hover:border-gray-200 dark:hover:border-gray-700">
             <div className="text-right hidden md:block">
-                <div className="text-sm font-bold text-gray-800 dark:text-gray-200 leading-tight">{userInfo.name}</div>
+                <div className="text-sm font-bold text-gray-800 dark:text-gray-200 leading-tight">{userInfo.name || 'User'}</div>
             </div>
             <div className="w-9 h-9 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-emerald-900/20">
-                {userInfo.name.charAt(0).toUpperCase()}
+                {(userInfo.name || 'U').charAt(0).toUpperCase()}
             </div>
             <ChevronDown size={16} className="text-gray-500" />
           </button>
@@ -137,7 +147,7 @@ export default function Header({ setIsSidebarOpen, onLogout }) {
               <div className="fixed inset-0 z-40" onClick={() => setIsUserMenuOpen(false)}></div>
               <div className="absolute right-0 mt-2 w-60 bg-white dark:bg-[#111318] rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
                 <div className="p-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/30">
-                  <p className="text-sm font-bold text-gray-800 dark:text-white truncate">{userInfo.name}</p>
+                  <p className="text-sm font-bold text-gray-800 dark:text-white truncate">{userInfo.name || 'User'}</p>
                 </div>
                 <ul className="py-1.5">
                   <li>

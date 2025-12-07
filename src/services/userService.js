@@ -13,22 +13,93 @@
 // limitations under the License.
 
 import { apiFetch } from './apiClient';
-import { MOCK_USERS } from './mockData';
+
+const BATCH_SIZE = 100;
 
 export const fetchUsers = async () => {
-    try {
-        const data = await apiFetch('users');
-        return Array.isArray(data) ? data : MOCK_USERS;
-    } catch {
-        return MOCK_USERS;
+  let allResults = [];
+  let skip = 0;
+  let hasMore = true;
+
+  try {
+    while (hasMore && allResults.length <= 5000) {
+      const chunk = await apiFetch(`users?skip=${skip}&limit=${BATCH_SIZE}`);
+      const data = Array.isArray(chunk) ? chunk : (chunk.data || []);
+
+      if (data.length > 0) {
+        allResults = [...allResults, ...data];
+        if (data.length < BATCH_SIZE) hasMore = false;
+        else skip += BATCH_SIZE;
+      } else {
+        hasMore = false;
+      }
     }
+    return allResults;
+  } catch (error) {
+    console.error("Failed to fetch users:", error);
+    return allResults;
+  }
 };
 
-export const toggleUserStatus = async (id, status) => {
-    try {
-        return await apiFetch(`users/${id}/status`, { 
-            method: 'PUT',
-            body: JSON.stringify({ status }),
-        });
-    } catch { return { success: true }; }
+export const fetchUserById = async (id) => apiFetch(`users/${id}`);
+
+export const createUser = async (userData) => {
+  return apiFetch('users', {
+    method: 'POST',
+    body: JSON.stringify({
+      email: userData.email,
+      full_name: userData.full_name,
+      password: userData.password,
+      role: userData.role,
+      is_active: userData.is_active
+    })
+  });
+};
+
+export const updateUser = async (id, userData) => {
+  return apiFetch(`users/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(userData)
+  });
+};
+
+export const deleteUser = async (id) => {
+  await apiFetch(`users/${id}`, { method: 'DELETE' });
+  return true;
+};
+
+export const toggleUserStatus = async (id, currentStatus) => {
+  return updateUser(id, { is_active: !currentStatus });
+};
+
+export const findUserByEmail = async (email) => {
+  try {
+    const users = await fetchUsers();
+    return users.find(u => u.email === email || u.full_name === email);
+  } catch (e) {
+    return null;
+  }
+};
+
+export const changePasswordMe = async (currentPassword, newPassword) => {
+  return apiFetch('users/change-password/me', {
+    method: 'POST',
+    body: JSON.stringify({
+      current_password: currentPassword,
+      new_password: newPassword
+    })
+  });
+};
+
+export const createUserAdmin = async (userData) => {
+  return apiFetch('users/admin/create', {
+    method: 'POST',
+    body: JSON.stringify({
+      email: userData.email,
+      full_name: userData.full_name,
+      password: userData.password,
+      role: userData.role || 'CITIZEN',
+      is_active: userData.is_active !== undefined ? userData.is_active : true
+    })
+  });
 };
