@@ -31,31 +31,26 @@ export const fetchLiveAQI = async () => {
 
   try {
     const rawData = await apiFetch('aqi/hanoi?limit=100');
-    let standardized = [];
     const dataArray = Array.isArray(rawData) ? rawData : (rawData.data || []);
 
-    standardized = dataArray.map(item => {
-        const pm25Key = "https://smartdatamodels.org/dataModel.Environment/pm25";
-        const coords = item.location?.value?.coordinates || [0, 0];
-        
-        const valPM25 = item[pm25Key]?.value;
-        const cleanPM25 = (valPM25 !== null && valPM25 !== undefined) ? Number(valPM25) : null;
-        
-        // --- QUAN TRỌNG: Đổi sang AQI ---
-        const aqiValue = cleanPM25 ? pm25ToAQI(cleanPM25) : null;
+    const standardized = dataArray.map(item => {
+      const pm25Key = "https://smartdatamodels.org/dataModel.Environment/pm25";
+      const coords = item.location?.value?.coordinates || [0, 0];
+      const valPM25 = item[pm25Key]?.value;
+      const cleanPM25 = (valPM25 !== null && valPM25 !== undefined) ? Number(valPM25) : null;
 
-        return {
-            sensor_id: item.id,
-            station_name: item.stationName?.value || "Trạm đo",
-            value: aqiValue, // Hiển thị AQI
-            pm25: cleanPM25, // Lưu gốc để dùng nếu cần
-            unit: "AQI",
-            coordinates: { longitude: coords[0], latitude: coords[1] },
-            provider: item.provider?.value,
-            temperature: item.temperature?.value || (28 + Math.random()*2).toFixed(0),
-            humidity: item.relativeHumidity?.value || (60 + Math.random()*10).toFixed(0),
-            wind_speed: item.windSpeed?.value || (3.5 + Math.random()).toFixed(1)
-        };
+      return {
+        sensor_id: item.id,
+        station_name: item.stationName?.value || "Trạm đo",
+        value: cleanPM25 ? pm25ToAQI(cleanPM25) : null,
+        pm25: cleanPM25,
+        unit: "AQI",
+        coordinates: { longitude: coords[0], latitude: coords[1] },
+        provider: item.provider?.value,
+        temperature: item.temperature?.value || (28 + Math.random()*2).toFixed(0),
+        humidity: item.relativeHumidity?.value || (60 + Math.random()*10).toFixed(0),
+        wind_speed: item.windSpeed?.value || (3.5 + Math.random()).toFixed(1)
+      };
     });
 
     const result = { source: "Live API", data: standardized };

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//src/pages/Dashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { Radio, Signal, AlertCircle, Activity, BarChart3, MapPin, X, Wind, CloudRain, Thermometer, Droplets } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell, AreaChart, Area } from 'recharts';
@@ -49,12 +48,18 @@ const StationDetailModal = ({ station, onClose }) => {
 
   if (!station) return null;
   const info = getAQIInfo(station.value); 
-  const formatTime = (iso) => { try { return new Date(iso).getHours() + 'h'; } catch { return ''; } };
+  const formatTime = (iso) => {
+    try {
+      return new Date(iso).getHours() + 'h';
+    } catch (error) {
+      console.warn("Failed to format time:", error);
+      return '';
+    }
+  };
 
   return (
     <div 
         onClick={onClose} 
-        // --- FIX: Bỏ 'zoom-in', chỉ giữ 'fade-in' ---
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300 cursor-pointer"
     >
         <div onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-[#111318] border border-gray-200 dark:border-gray-700/60 rounded-3xl w-full max-w-lg shadow-2xl relative overflow-hidden cursor-default flex flex-col max-h-[90vh] transition-colors duration-300">
@@ -71,7 +76,7 @@ const StationDetailModal = ({ station, onClose }) => {
                     {/* Vòng tròn chỉ số AQI */}
                     <div className={`inline-flex flex-col items-center justify-center w-32 h-32 rounded-full border-4 ${info.border} ${info.bg} mb-6 shadow-lg`}>
                         <span className={`text-5xl font-black ${info.text}`}>{station.value}</span>
-                        <span className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400 mt-1">AQI US</span>
+                        <span className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400 mt-1">AQI</span>
                     </div>
 
                     {/* Chỉ số phụ */}
@@ -150,7 +155,7 @@ export default function Dashboard() {
   const [selectedStation, setSelectedStation] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Cấu hình màu Chart theo Theme
+  // Cấu hình màu Charts
   const chartColors = {
       text: theme === 'dark' ? '#9ca3af' : '#4b5563',
       grid: theme === 'dark' ? '#374151' : '#e5e7eb',
@@ -170,11 +175,13 @@ export default function Dashboard() {
       let userLat = null, userLon = null;
       try {
           const locationPromise = getUserLocation();
-          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject("Timeout"), 3000));
-          const pos = await Promise.race([locationPromise, timeoutPromise]);
-          userLat = pos.lat; userLon = pos.lon;
-          setLocationTitle("Vị trí của bạn");
-      } catch (err) {}
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject("Timeout"), 3000));
+        const pos = await Promise.race([locationPromise, timeoutPromise]);
+        userLat = pos.lat; userLon = pos.lon;
+        setLocationTitle("Vị trí của bạn");
+      } catch (error) {
+        console.warn("Failed to get user location:", error);
+      }
       
       try {
         const [aqiResult, weatherResult] = await Promise.all([fetchLiveAQI(), fetchWeatherForecast(userLat, userLon)]);

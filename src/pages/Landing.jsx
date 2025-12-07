@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//src/pages/Landing.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Activity, Map, Megaphone, Database, Rocket, ArrowRight, Cloud, Users, Cog } from 'lucide-react';
@@ -278,16 +277,16 @@ export default function Landing() {
               </div>
               <div className="flex flex-wrap gap-3">
                 <a
-                  href="https://your-appstore-link"
+                  href=""
                   className="inline-flex items-center px-5 py-3 rounded-2xl bg-black text-white font-semibold border border-white/10 hover:border-emerald-300/50 transition-colors"
                 >
-                  Tải App Store (thêm link sau)
+                  Tải trên App Store (Coming soon)
                 </a>
                 <a
-                  href="https://your-playstore-link"
+                  href=""
                   className="inline-flex items-center px-5 py-3 rounded-2xl bg-white text-black font-semibold border border-black hover:bg-emerald-50 transition-colors"
                 >
-                  Tải Google Play (thêm link sau)
+                  Tải APK cho Android
                 </a>
               </div>
             </div>

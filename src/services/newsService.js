@@ -15,11 +15,11 @@
 import { apiFetch } from './apiClient';
 
 export const fetchNews = async () => {
-    try {
-        const data = await apiFetch('news/hanoimoi?limit=20');
-        return Array.isArray(data) ? data : [];
-    } catch (error) {
-        console.error("News API Error:", error);
-        return [];
-    }
+  try {
+    const data = await apiFetch('news/hanoimoi?limit=20');
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error("Failed to fetch news:", error);
+    return [];
+  }
 };

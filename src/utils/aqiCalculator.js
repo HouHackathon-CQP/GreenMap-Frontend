@@ -12,23 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export const pm25ToAQI = (pm25) => {
+export const pm25ToAQI_VN = (pm25) => {
     if (pm25 === null || pm25 === undefined) return null;
     const c = parseFloat(pm25);
+
     const breakpoints = [
-        { cLow: 0.0, cHigh: 12.0, iLow: 0, iHigh: 50 },
-        { cLow: 12.1, cHigh: 35.4, iLow: 51, iHigh: 100 },
-        { cLow: 35.5, cHigh: 55.4, iLow: 101, iHigh: 150 },
-        { cLow: 55.5, cHigh: 150.4, iLow: 151, iHigh: 200 },
-        { cLow: 150.5, cHigh: 250.4, iLow: 201, iHigh: 300 },
-        { cLow: 250.5, cHigh: 350.4, iLow: 301, iHigh: 400 },
-        { cLow: 350.5, cHigh: 500.4, iLow: 401, iHigh: 500 }
+        { cLow: 0,   cHigh: 25,   iLow: 0,   iHigh: 50 },
+        { cLow: 25,  cHigh: 50,   iLow: 51,  iHigh: 100 },
+        { cLow: 50,  cHigh: 80,   iLow: 101, iHigh: 150 },
+        { cLow: 80,  cHigh: 150,  iLow: 151, iHigh: 200 },
+        { cLow: 150, cHigh: 250,  iLow: 201, iHigh: 300 },
+        { cLow: 250, cHigh: 350,  iLow: 301, iHigh: 400 },
+        { cLow: 350, cHigh: 500,  iLow: 401, iHigh: 500 }
     ];
+
     const bp = breakpoints.find(b => c >= b.cLow && c <= b.cHigh);
     if (!bp) return 500;
+
     const aqi = ((bp.iHigh - bp.iLow) / (bp.cHigh - bp.cLow)) * (c - bp.cLow) + bp.iLow;
+
     return Math.round(aqi);
 };
+
+
+// Alias giữ tương thích với các chỗ đang dùng tên cũF
+export const pm25ToAQI = pm25ToAQI_VN;
+
 
 // Hàm lấy màu cho giao diện cũ
 export const getAQIInfo = (aqi) => {
