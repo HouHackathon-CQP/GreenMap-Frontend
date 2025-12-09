@@ -1,0 +1,102 @@
+# Configuration cho git-cliff - Giống React CHANGELOG
+# https://git-cliff.org/docs/configuration
+
+[changelog]
+header = """
+# Nhật ký thay đổi
+
+Tất cả các thay đổi đáng chú ý của dự án này sẽ được ghi lại trong file này.
+
+Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+và dự án này tuân thủ [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+"""
+
+body = """
+{% if version %}\
+    {% if version is matching("^[0-9]+\\.[0-9]+\\.[0-9]+") %}\
+        ## {{ version | trim_start_matches(pat="v") }} ({{ timestamp | date(format="%B %d, %Y") }})
+    {% else %}\
+        ## {{ version | trim_start_matches(pat="v") }}
+    {% endif %}\
+{% else %}\
+    ## Chưa phát hành
+{% endif %}\
+{% set_global breaking_changes = commits | filter(attribute="breaking", value=true) %}\
+{% if breaking_changes | length > 0 %}\
+
+### ⚠️ Breaking Changes
+{% for commit in breaking_changes -%}
+- {{ commit.message | split(pat="\n") | first | trim }}\
+{% if commit.author.email == "100331812+ourstorycomic@users.noreply.github.com" %} - Nguyễn Hà Phương ([@ourstorycomic](https://github.com/ourstorycomic))\
+{% elif commit.author.email == "nolove011112@gmail.com" %} - Trần Anh Quân ([@kedokato-dev](https://github.com/kedokato-dev))\
+{% elif commit.author.email == "quanbtrsci@gmail.com" %} - Trần Anh Quân - Techtreck Noob ([@quanta1999](https://github.com/quanta1999))\
+{% elif commit.author.email == "chien.tt.dev@gmail.com" %} - Trần Trọng Chiến ([@blueMonkey23](https://github.com/blueMonkey23))\
+{% elif commit.author.name == "HouHackathon-CQP" %} - HouHackathon-CQP Team\
+{% endif %} in [{{ commit.id | truncate(length=7, end="") }}](https://github.com/HouHackathon-CQP/GreenMap-Frontend/commit/{{ commit.id }})
+{% endfor -%}
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group }}
+{% for commit in commits -%}
+- {% if commit.scope %}**{{ commit.scope }}**: {% endif %}{{ commit.message | split(pat="\n") | first | trim }}\
+{% if commit.author.email == "100331812+ourstorycomic@users.noreply.github.com" %} - Nguyễn Hà Phương ([@ourstorycomic](https://github.com/ourstorycomic))\
+{% elif commit.author.email == "nolove011112@gmail.com" %} - Trần Anh Quân ([@kedokato-dev](https://github.com/kedokato-dev))\
+{% elif commit.author.email == "quanbtrsci@gmail.com" %} - Trần Anh Quân - Techtreck Noob ([@quanta1999](https://github.com/quanta1999))\
+{% elif commit.author.email == "chien.tt.dev@gmail.com" %} - Trần Trọng Chiến ([@blueMonkey23](https://github.com/blueMonkey23))\
+{% elif commit.author.name == "HouHackathon-CQP" %} - HouHackathon-CQP Team\
+{% endif %} in [{{ commit.id | truncate(length=7, end="") }}](https://github.com/HouHackathon-CQP/GreenMap-Frontend/commit/{{ commit.id }})
+{% endfor -%}
+{% endfor %}
+"""
+
+footer = """
+---
+*Changelog được tạo tự động bởi [git-cliff](https://git-cliff.org). Xem hướng dẫn tại [docs/GIT_CLIFF_GUIDE.md](docs/GIT_CLIFF_GUIDE.md)*
+"""
+
+trim = true
+
+[git]
+conventional_commits = true
+filter_unconventional = false
+split_commits = false
+commit_parsers = [
+    { message = "^feat", group = "✨ Đã thêm" },
+    { message = "^fix", group = "🐛 Đã sửa" },
+    { message = "^doc", group = "📚 Tài liệu" },
+    { message = "^perf", group = "⚡ Performance" },
+    { message = "^refactor", group = "♻️ Đã thay đổi" },
+    { message = "^style", group = "💄 Style" },
+    { message = "^test", group = "✅ Tests" },
+    { message = "^chore\\(release\\): prepare for", skip = true },
+    { message = "^chore\\(deps\\)", skip = true },
+    { message = "^chore", group = "🔧 Maintenance" },
+    { message = "^ci", group = "👷 CI/CD" },
+    { message = "^build", group = "📦 Build" },
+    { message = "^revert", group = "⏪ Reverts" },
+    { body = ".*security", group = "🔒 Security" },
+    # Bắt TẤT CẢ commits khác không theo conventional format
+    { message = ".*", group = "📝 Các thay đổi khác" },
+]
+protect_breaking_commits = false
+filter_commits = false
+commit_preprocessors = [
+    # Xóa issue numbers khỏi title
+    { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "" },
+    # Map author names to correct GitHub usernames
+    { pattern = 'Zeus Gang Project', replace = "HouHackathon-CQP" },
+    { pattern = 'ourstorycomic', replace = "Nguyễn Hà Phương" },
+    { pattern = 'kedokato-dev', replace = "Trần Anh Quân" },
+    { pattern = 'quanta1999', replace = "Trần Anh Quân - Techtreck Noob" },
+    { pattern = 'blueMonkey23', replace = "Trần Trọng Chiến" },
+]
+tag_pattern = "v[0-9]*"
+skip_tags = ""
+ignore_tags = ""
+topo_order = false
+sort_commits = "oldest"
+
+[remote.github]
+owner = "HouHackathon-CQP"
+repo = "GreenMap-Frontend"

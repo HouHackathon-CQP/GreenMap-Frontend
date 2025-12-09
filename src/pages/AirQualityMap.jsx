@@ -32,6 +32,23 @@ import { fetchWeatherStations, fetchWeatherForecast } from '../services/weatherS
 import { useTheme } from '../context/ThemeContext';
 import WeatherWidget from '../components/WeatherWidget'; 
 
+// --- DANH SÁCH TRẠM AQI ĐƯỢC GIỮ LẠI ---
+const AQI_WHITELIST = [
+  'ĐH Bách Khoa - cổng Parabol đường Giải Phóng',
+  'Công viên hồ điều hòa Nhân Chính',
+  'Khuất Duy Tiến',
+  'OceanPark',
+  '556 Nguyễn Văn Cừ'
+];
+
+// Hàm check xem trạm có trong whitelist không
+const isAQIStationAllowed = (stationName) => {
+  if (!stationName) return false;
+  return AQI_WHITELIST.some(allowedName => 
+    stationName.toLowerCase().includes(allowedName.toLowerCase())
+  );
+};
+
 // --- CẤU HÌNH CONFIG ---
 const MODE_CONFIG = {
     AQI: { color: '#10b981', icon: Wind, label: 'Chất lượng không khí' },
@@ -105,6 +122,7 @@ const AirQualityMap = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [forecast, setForecast] = useState(null);
+  const [showAQI, setShowAQI] = useState(false);
 
   // --- STATE CHO BIỂU ĐỒ DỰ BÁO TRONG SIDEBAR ---
   const [stationForecast, setStationForecast] = useState(null);
@@ -117,6 +135,11 @@ const AirQualityMap = () => {
       else if (viewMode === 'RAIN') sourceList = rainData;
       else if (viewMode === 'TRAFFIC') sourceList = [];
       else sourceList = locations[viewMode] || [];
+
+      // Lọc AQI stations theo whitelist nếu showAQI = true
+      if (viewMode === 'AQI' && showAQI) {
+          sourceList = sourceList.filter(item => isAQIStationAllowed(item.station_name));
+      }
 
       if (userLocation && filterRadius > 0) {
           sourceList = sourceList.filter(item => {
@@ -132,7 +155,7 @@ const AirQualityMap = () => {
           sourceList.sort((a, b) => a.distance - b.distance);
       }
       return sourceList;
-  }, [viewMode, aqiData, rainData, locations, userLocation, filterRadius]);
+  }, [viewMode, aqiData, rainData, locations, userLocation, filterRadius, showAQI]);
 
   // --- 2. XỬ LÝ TÌM KIẾM ---
   useEffect(() => {
@@ -261,7 +284,9 @@ const AirQualityMap = () => {
                   fetchLocations('BICYCLE_RENTAL'), fetchLocations('TOURIST_ATTRACTION'),
                   fetchWeatherForecast()
               ]);
-              setAqiData(Array.isArray(aqi?.data) ? aqi.data : []);
+              const aqiDataList = Array.isArray(aqi?.data) ? aqi.data : [];
+              console.log('🔍 TẤT CẢ TRẠM AQI (AirQualityMap):', aqiDataList.map(s => s.station_name));
+              setAqiData(aqiDataList);
               setRainData(weather || []);
               setForecast(weatherForecast);
               setLocations({ PUBLIC_PARK: parks || [], CHARGING_STATION: charging || [], BICYCLE_RENTAL: bikes || [], TOURIST_ATTRACTION: tourist || [] });
@@ -402,6 +427,20 @@ const AirQualityMap = () => {
              {viewMode !== 'TRAFFIC' && (
                  <>
                     <div className="w-px h-6 bg-gray-300 dark:bg-gray-700 hidden md:block"></div>
+                    {viewMode === 'AQI' && (
+                        <button 
+                            onClick={() => setShowAQI(!showAQI)}
+                            title={showAQI ? "Hiện tất cả trạm AQI" : "Ẩn các trạm AQI ngoài whitelist"}
+                            className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                                showAQI 
+                                    ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-700' 
+                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                            }`}
+                        >
+                            <Wind size={14}/>
+                            <span className="hidden sm:inline">{showAQI ? 'Lọc trạm' : 'Tất cả'}</span>
+                        </button>
+                    )}
                     <div className="relative">
                          <button onClick={() => setShowFilterMenu(!showFilterMenu)} className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"><Filter size={14}/> <span className="hidden sm:inline">{RADIUS_OPTIONS.find(r => r.value === filterRadius)?.label}</span><span className="sm:hidden">Bán kính</span></button>
                          {showFilterMenu && (<div className="absolute top-full left-0 mt-2 w-40 bg-white dark:bg-[#1a1d24] rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">{RADIUS_OPTIONS.map(opt => (<button key={opt.value} onClick={() => { if(opt.value > 0 && !userLocation) handleLocateMe(false); setFilterRadius(opt.value); setShowFilterMenu(false); }} className={`w-full text-left px-4 py-2 text-xs font-medium ${filterRadius === opt.value ? 'text-emerald-500 bg-emerald-500/10' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}>{opt.label}</button>))}</div>)}
