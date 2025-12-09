@@ -110,7 +110,7 @@ export default function ContentManagement({ title, locationType }) {
         // Gọi hàm fetchLocations mới (đã có vòng lặp batch fetching)
         const data = await fetchLocations(locationType);
         setAllLocations(data);
-        setPage(1); // Reset về trang 1
+        setPage(1);
     } catch (err) { 
         console.error(err); 
     } finally { 
@@ -135,7 +135,7 @@ export default function ContentManagement({ title, locationType }) {
       return matchName || matchId;
   });
 
-  // Bước B: Cắt trang (Slice) - Đây là bước sửa lỗi "Limit bị lỗi"
+  // Bước B: Cắt trang (Slice)
   const totalPages = Math.ceil(filteredData.length / limit) || 1;
   const startIndex = (page - 1) * limit;
   // CHỈ LẤY ĐÚNG SỐ LƯỢNG LIMIT ĐỂ HIỂN THỊ
@@ -168,7 +168,7 @@ export default function ContentManagement({ title, locationType }) {
           if (editingItem) {
               const updateId = editingItem.db_id || editingItem.id;
               await updateLocation(updateId, formData);
-              // Update trực tiếp vào state để không phải load lại
+              // Update trực tiếp vào state
               setAllLocations(prev => prev.map(l => (l.id === editingItem.id || l.db_id === updateId) ? {...l, ...formData} : l));
           } else {
               const newItem = await createLocation(formData);
@@ -274,7 +274,7 @@ export default function ContentManagement({ title, locationType }) {
                                                 {isFetchingDetail && (editingItem?.id === row.id || editingItem?.db_id === row.db_id) ? <Loader2 size={16} className="animate-spin"/> : <Edit size={16}/>}
                                         </button>
 
-                                        {/* Managers can only hide/unhide; Admins can still delete */}
+                                        {/* Managers chỉ ẩn được còn admin mới xoá được */}
                                         {isManager && !isAdmin && (
                                             <button onClick={() => handleToggleVisibility(row)} className="p-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-amber-50 dark:hover:bg-amber-600/20 text-gray-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 rounded-xl transition-colors" title={row.is_active ? 'Ẩn khỏi bản đồ' : 'Hiện trên bản đồ'}>
                                                 {row.is_active ? <EyeOff size={16}/> : <Eye size={16}/>}
@@ -293,7 +293,7 @@ export default function ContentManagement({ title, locationType }) {
             </table>
         </div>
         
-        {/* Footer Phân trang chuẩn */}
+        {/* Phân trang footer */}
         <div className="bg-gray-50/90 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 p-4 px-6 flex flex-col sm:flex-row justify-between items-center gap-4 backdrop-blur-md text-sm z-20">
             <div className="flex items-center gap-4 text-gray-500 dark:text-gray-400 font-medium">
                 <span>Hiển thị</span>

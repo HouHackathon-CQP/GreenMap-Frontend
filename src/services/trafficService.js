@@ -15,13 +15,13 @@
 import { apiFetch } from './apiClient';
 
 const TRAFFIC_MAP_CACHE_KEY = 'greenmap_traffic_map_cache';
-const TRAFFIC_MAP_TTL = 24 * 60 * 60 * 1000; // 24 hours
+const TRAFFIC_MAP_TTL = 5 * 60 * 1000;
 
-export const fetchTrafficMap = async () => {
+export const fetchTrafficMap = async (forceRefresh = false) => {
   const now = Date.now();
   const cached = localStorage.getItem(TRAFFIC_MAP_CACHE_KEY);
   
-  if (cached) {
+  if (!forceRefresh && cached) {
     try {
       const parsed = JSON.parse(cached);
       if (now - parsed.timestamp < TRAFFIC_MAP_TTL) {
