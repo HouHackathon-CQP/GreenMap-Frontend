@@ -589,9 +589,11 @@ export default function Notification() {
                     <td className="px-4 py-3 text-red-600 dark:text-red-400">{item.failed_count}</td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-1 rounded text-xs ${
-                        item.status === 'success' 
+                        item.status === 'sent' 
                           ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                          : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+                          : item.status === 'failed'
+                          ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+                          : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
                       }`}>
                         {item.status}
                       </span>
