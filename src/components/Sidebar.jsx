@@ -17,7 +17,7 @@ import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, Map, BatteryCharging, Flag, 
   BarChart3, Settings, X, Globe, Bike, MapPin, 
-  Newspaper, Users, ShieldCheck 
+  Newspaper, Users, ShieldCheck, Bell 
 } from 'lucide-react';
 
 import logoImg from '../assets/logo.png'; 
@@ -91,6 +91,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           <SectionTitle title="Quản trị" />
           <NavItem to="/reports" label="Duyệt Báo cáo" icon={Flag} onNavigate={closeSidebar} />
           <NavItem to="/users" label="Người dùng" icon={Users} onNavigate={closeSidebar} />
+          <NavItem to="/notifications" label="Thông báo" icon={Bell} onNavigate={closeSidebar} />
 
           <SectionTitle title="Hệ thống" />
           <NavItem to="/analytics" label="Phân tích" icon={BarChart3} onNavigate={closeSidebar} />

@@ -28,6 +28,7 @@ import AirQualityMap from './pages/AirQualityMap';
 import NewsFeed from './pages/NewsFeed';
 import UserManagement from './pages/UserManagement';
 import Landing from './pages/Landing';
+import Notification from './pages/Notification';
 
 import { logoutUser } from './services'; 
 
@@ -98,6 +99,7 @@ export default function App() {
 
           <Route path="/reports" element={<ReportApproval />} />
           <Route path="/users" element={<UserManagement />} />
+          <Route path="/notifications" element={<Notification />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
