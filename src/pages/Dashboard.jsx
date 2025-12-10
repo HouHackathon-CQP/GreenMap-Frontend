@@ -137,8 +137,6 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedStation, setSelectedStation] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
-  
-  // --- 2. STATE LỌC (DEFAULT: FALSE - HIỆN TẤT CẢ) ---
   const [isFiltered, setIsFiltered] = useState(false); 
 
   const chartColors = {
@@ -195,10 +193,43 @@ export default function Dashboard() {
     loadData();
   }, []);
 
-  // --- LOGIC LỌC: CHỈ HIỂN THỊ TRẠM TRONG WHITELIST NẾU ĐANG BẬT LỌC ---
   const displayedSensors = isFiltered 
-      ? sensorList.filter(s => isTargetStation(s.station_name)) // CHỈ HIỆN TRẠM TARGET
-      : sensorList; // HIỆN TẤT CẢ
+      ? sensorList.filter(s => isTargetStation(s.station_name)) 
+      : sensorList;
+  const filteredKpiData = (() => {
+    let totalAqi = 0, count = 0, active = 0;
+    const distMap = {};
+
+    displayedSensors.forEach(s => {
+      const val = s.value;
+      if (val !== null && !isNaN(val)) {
+        totalAqi += val;
+        count++;
+        active++;
+        const dName = detectDistrict(s.station_name);
+        if (!distMap[dName]) distMap[dName] = { total: 0, count: 0 };
+        distMap[dName].total += val;
+        distMap[dName].count++;
+      }
+    });
+
+    const filteredDistrictData = Object.keys(distMap)
+      .map(k => ({ name: k, aqi: Math.round(distMap[k].total / distMap[k].count) }))
+      .sort((a, b) => b.aqi - a.aqi)
+      .slice(0, 6);
+
+    const hiddenStations = isFiltered ? (sensorList.length - displayedSensors.length) : (displayedSensors.length - active);
+
+    const result = {
+      total: sensorList.length, 
+      active,
+      offline: hiddenStations,
+      avgAqi: count ? Math.round(totalAqi / count) : 0,
+      districtData: filteredDistrictData
+    };
+
+    return result;
+  })();
 
   const cardClass = "bg-white dark:bg-[#111318] border border-gray-200 dark:border-gray-800 p-6 rounded-2xl shadow-sm dark:shadow-none transition-colors duration-300";
 
@@ -239,26 +270,26 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <div className={cardClass}>
             <div className="flex justify-between mb-4"><div className="p-3 bg-blue-500/10 rounded-xl text-blue-600 dark:text-blue-400"><Radio size={24}/></div></div>
-            <div className="text-3xl font-black text-gray-900 dark:text-white mb-1">{kpiData.total}</div>
+            <div className="text-3xl font-black text-gray-900 dark:text-white mb-1">{filteredKpiData.total}</div>
             <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">Tổng trạm lắp đặt</div>
         </div>
         <div className={cardClass}>
             <div className="flex justify-between mb-4"><div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-600 dark:text-emerald-400"><Signal size={24}/></div></div>
-            <div className="text-3xl font-black text-gray-900 dark:text-white mb-1">{kpiData.active}</div>
+            <div className="text-3xl font-black text-gray-900 dark:text-white mb-1">{filteredKpiData.active}</div>
             <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">Trạm đang Online</div>
         </div>
         <div className={cardClass}>
             <div className="flex justify-between mb-4"><div className="p-3 bg-yellow-500/10 rounded-xl text-yellow-600 dark:text-yellow-400"><AlertCircle size={24}/></div></div>
-            <div className="text-3xl font-black text-gray-900 dark:text-white mb-1">0</div>
-            <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">Cảnh báo / Bảo trì</div>
+            <div className="text-3xl font-black text-gray-900 dark:text-white mb-1">{filteredKpiData.offline}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">Trạm bảo trì</div>
         </div>
         <div className={`${cardClass} relative overflow-hidden group`}>
             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none"><Activity size={60} className="text-emerald-500"/></div>
             <div className="flex justify-between mb-4 relative z-10">
                 <div className="p-3 bg-emerald-100 dark:bg-emerald-500/20 rounded-xl text-emerald-600 dark:text-emerald-400"><Activity size={24}/></div>
-                <span className={`text-xs font-bold px-2 py-1 rounded uppercase border ${getAQIInfo(kpiData.avgAqi).bg} ${getAQIInfo(kpiData.avgAqi).text} ${getAQIInfo(kpiData.avgAqi).border}`}>{getAQIInfo(kpiData.avgAqi).level}</span>
+                <span className={`text-xs font-bold px-2 py-1 rounded uppercase border ${getAQIInfo(filteredKpiData.avgAqi).bg} ${getAQIInfo(filteredKpiData.avgAqi).text} ${getAQIInfo(filteredKpiData.avgAqi).border}`}>{getAQIInfo(filteredKpiData.avgAqi).level}</span>
             </div>
-            <div className="text-4xl font-black text-gray-900 dark:text-white mb-1 relative z-10">{kpiData.avgAqi} <span className="text-sm font-medium text-gray-500 dark:text-gray-400">AQI</span></div>
+            <div className="text-4xl font-black text-gray-900 dark:text-white mb-1 relative z-10">{filteredKpiData.avgAqi} <span className="text-sm font-medium text-gray-500 dark:text-gray-400">AQI</span></div>
             <div className="text-sm text-gray-500 dark:text-gray-400 font-medium relative z-10">Trung bình toàn TP</div>
         </div>
       </div>
@@ -313,15 +344,15 @@ export default function Dashboard() {
                 <h3 className="text-gray-900 dark:text-white font-bold text-lg flex items-center"><BarChart3 className="text-blue-500 mr-2"/> Ô nhiễm theo Quận</h3>
             </div>
             <div className="flex-1 min-h-0 min-w-0">
-                {districtData.length === 0 ? <div className="h-full flex items-center justify-center text-gray-500 italic font-medium">Chưa đủ dữ liệu phân tích</div> : (
+                {filteredKpiData.districtData.length === 0 ? <div className="h-full flex items-center justify-center text-gray-500 italic font-medium">Chưa đủ dữ liệu phân tích</div> : (
                     <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                        <BarChart data={districtData} layout="vertical" margin={{left: 0, right: 20}}>
+                        <BarChart data={filteredKpiData.districtData} layout="vertical" margin={{left: 0, right: 20}}>
                             <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} horizontal={false}/>
                             <XAxis type="number" stroke={chartColors.text} hide/>
                             <YAxis dataKey="name" type="category" stroke={chartColors.text} tickLine={false} axisLine={false} width={100} tick={{fontSize: 12, fill: chartColors.text, fontWeight: 500}}/>
                             <Tooltip cursor={{fill: chartColors.grid, opacity: 0.2}} contentStyle={{backgroundColor: chartColors.tooltipBg, border: `1px solid ${chartColors.tooltipBorder}`, borderRadius:'12px'}} itemStyle={{color: chartColors.tooltipText, fontWeight:'bold'}}/>
                             <Bar dataKey="aqi" radius={[0, 6, 6, 0]} barSize={24}>
-                                {districtData.map((entry, index) => <Cell key={`cell-${index}`} fill={getAQIInfo(entry.aqi).color} />)}
+                                {filteredKpiData.districtData.map((entry, index) => <Cell key={`cell-${index}`} fill={getAQIInfo(entry.aqi).color} />)}
                             </Bar>
                         </BarChart>
                     </ResponsiveContainer>
