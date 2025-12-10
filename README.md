@@ -46,36 +46,56 @@ Hệ thống tích hợp dữ liệu từ các cảm biến IoT, báo cáo từ 
     <img src="public/images/image-3.png" alt="tourist" width="400px">
 </p>
 
-## ✨ Tính năng Nổi bật <a id="tinh-nang"></a>
+## ✨ Tính năng Thực tế <a id="tinh-nang"></a>
 
-Hệ thống được chia thành các phân hệ chính với những chức năng chuyên sâu:
+Hệ thống quản trị hoàn chình với các tính năng chuyên sâu:
 
 ### 1. Dashboard Tổng quan 📊
-Nơi nắm bắt nhịp đập của thành phố trong nháy mắt:
-* **KPIs Thời gian thực:** Theo dõi tổng số trạm, số trạm Online/Offline, và chỉ số AQI trung bình toàn thành phố.
-* **Bản đồ 3D Tương tác:** Tích hợp bản đồ nghiêng (Pitch view) hiển thị vị trí các trạm quan trắc và định vị người quản trị theo thời gian thực (GPS).
-* **Widget Thời tiết Thông minh:** Kết nối API Backend để hiển thị nhiệt độ, độ ẩm hiện tại và **biểu đồ dự báo 24h** (kết hợp nhiệt độ & xác suất mưa).
-* **Phân tích Ô nhiễm:** Biểu đồ xếp hạng mức độ ô nhiễm theo từng Quận/Huyện để nhanh chóng phát hiện điểm nóng.
+Trung tâm điều khiển chính của hệ thống:
+* **KPIs Thời gian thực:** Hiển thị tổng số trạm (120+), trạm Online/Offline, cảnh báo bảo trì và chỉ số AQI trung bình toàn thành phố với mã màu chuẩn.
+* **Bản đồ 3D Tương tác:** Bản đồ nghiêng (Pitch view) hiển thị vị trí các trạm quan trắc với GPS positioning chính xác.
+* **Widget Thời tiết:** Hiển thị nhiệt độ, độ ẩm hiện tại và **biểu đồ dự báo 24h** với biểu đồ Area Chart kết hợp nhiệt độ & xác suất mưa.
+* **Phân tích Ô nhiễm:** Biểu đồ cột (Bar Chart) xếp hạng AQI theo Quận/Huyện giúp phát hiện điểm nóng ô nhiễm.
+* **Bộ lọc AQI:** Toggle button để lọc chỉ hiển thị 5 trạm quan trọng (whitelist system).
 
 ### 2. Bản đồ Giám sát Đa lớp 🗺️
-Công cụ đắc lực để phân tích không gian:
-* **Chế độ xem đa dạng:** Chuyển đổi linh hoạt giữa các lớp dữ liệu:
-    * 💨 **AQI:** Hiển thị chất lượng không khí với mã màu chuẩn (Xanh - Đỏ - vàng).
-    * 🌧️ **Thời tiết:** Các trạm đo mưa, nắng, mây.
-    * 🚗 **Giao thông:** Lớp phủ mật độ giao thông thời gian thực để đối chiếu với ô nhiễm không khí.
-* **Định vị & GPS:** Tự động định vị người dùng với độ chính xác cao (High Accuracy).
-* **Sidebar Chi tiết:** Xem thông số kỹ thuật sâu hơn của từng trạm khi click vào marker.
+Công cụ phân tích không gian đa chiều:
+* **7 Chế độ xem:** Chuyển đổi linh hoạt giữa các lớp dữ liệu:
+    * 💨 **AQI:** Chất lượng không khí với mã màu tiêu chuẩn Vietnam QCVN 05:2013 (5 mức độ)
+    * 🌧️ **RAIN:** Trạm thời tiết + dự báo 24h cho từng vị trí khi click
+    * 🚗 **TRAFFIC:** Lớp phủ mật độ giao thông theo thời gian
+    * 🌳 **PUBLIC_PARK:** Công viên công cộng
+    * ⚡ **CHARGING_STATION:** Trạm sạc xe điện
+    * 🚴 **BICYCLE_RENTAL:** Điểm thuê xe đạp
+    * 📸 **TOURIST_ATTRACTION:** Điểm tham quan du lịch
+* **Tính năng nâng cao:** GPS định vị, bán kính lọc (1km-10km), Sidebar chi tiết với thông tin kỹ thuật.
 
 ### 3. Quản lý Báo cáo Cộng đồng 📢
-Kết nối trực tiếp với người dân:
-* **Quy trình Duyệt bài:** Giao diện thẻ phân loại rõ ràng: *Chờ xử lý*, *Đã duyệt*, *Từ chối*.
-* **Xử lý nhanh:** Admin có thể Duyệt hoặc Từ chối báo cáo chỉ với 1 cú click.
-* **Hỗ trợ hình ảnh:** Hiển thị ảnh hiện trường.
+Hệ thống kiểm duyệt báo cáo từ người dân:
+* **3 Tab trạng thái:** `PENDING` (Chờ xử lý), `APPROVED` (Đã duyệt), `REJECTED` (Đã từ chối).
+* **Thông tin đầy đủ:** Tiêu đề, mô tả, tọa độ GPS, ảnh hiện trường, timestamp, ID báo cáo.
+* **Xử lý 1-click:** Nút Duyệt (màu xanh) / Từ chối (màu xám) với hiệu ứng active.
+* **Công cụ Test:** Nút "Tạo Test" để tạo báo cáo mẫu với ảnh ngẫu nhiên.
 
-### 4. Quản lý Dữ liệu Hạ tầng 🌳
-Quản lý cơ sở dữ liệu hạ tầng xanh tập trung:
-* **CRUD đầy đủ:** Thêm, Sửa, Xóa các địa điểm như: Công viên, Trạm sạc xe điện, Điểm thuê xe đạp, Điểm du lịch.
-* **Đồng bộ:** Dữ liệu được quản lý tập trung và đồng bộ sang hệ thống bản đồ người dùng.
+### 4. Quản lý Hạ tầng Xanh 🌳
+System CRUD cho 4 loại hạ tầng:
+* **Công viên** (`/parks`): Quản lý công viên công cộng
+* **Trạm sạc** (`/charging`): Trạm sạc xe điện  
+* **Thuê xe đạp** (`/bikes`): Điểm thuê xe đạp
+* **Du lịch** (`/tourist`): Điểm tham quan du lịch
+* **Tính năng:** Thêm/Sửa/Xóa với modal xác nhận, phân trang, tìm kiếm theo tên.
+
+### 5. Quản lý Người dùng 👥
+Hệ thống user management:
+* **Vai trò:** Phân biệt ADMIN và CITIZEN với badge màu sắc khác nhau.
+* **Trạng thái:** Toggle Hoạt động/Đã khóa với switch button.
+* **Thông tin:** Tên, email, vai trò, thời gian tạo, trạng thái hoạt động.
+
+### 6. Analytics & Báo cáo 📈
+Dashboard phân tích chuyên sâu:
+* **Biểu đồ so sánh:** AQI thực tế vs dự báo theo timeline.
+* **Lịch sử báo cáo:** Danh sách các báo cáo đã tạo với trạng thái và dung lượng.
+* **Export PDF:** Tải xuống báo cáo định dạng PDF.
 
 ---
 
@@ -91,6 +111,73 @@ Dự án sử dụng những công nghệ Frontend mới nhất để đảm b�
 | **Charts** | [Recharts](https://recharts.org/) | Vẽ biểu đồ đẹp, responsive và dễ tùy biến. |
 | **Icons** | [Lucide React](https://lucide.dev/) | Bộ icon hiện đại, nhẹ và đồng bộ. |
 | **API Client** | Fetch API + Custom Service | Xử lý Token tự động, Caching dữ liệu thông minh để giảm tải Server. |
+
+---
+
+## 📁 Cấu trúc Dự án
+
+```
+src/
+├── components/          # Các component tái sử dụng
+│   ├── GreenMap.jsx           # Component bản đồ tích hợp MapLibre GL
+│   ├── Header.jsx             # Header thanh điều hướng
+│   ├── Sidebar.jsx            # Sidebar quản lý điều hướng
+│   ├── WeatherWidget.jsx      # Widget dự báo thời tiết 24h
+│   └── ...
+├── pages/              # Các trang chính
+│   ├── Dashboard.jsx          # Dashboard tổng quan (KPIs, Charts, Map)
+│   ├── AirQualityMap.jsx      # Bản đồ giám sát đa lớp (AQI, Thời tiết, Giao thông)
+│   ├── Analytics.jsx          # Trang phân tích chi tiết
+│   ├── ReportApproval.jsx     # Quản lý duyệt báo cáo cộng đồng
+│   ├── ContentManagement.jsx  # Quản lý hạ tầng (Công viên, Trạm sạc, etc.)
+│   ├── UserManagement.jsx     # Quản lý người dùng
+│   ├── Settings.jsx           # Cài đặt tài khoản & bảo mật
+│   ├── Login.jsx              # Trang đăng nhập
+│   ├── NewsFeed.jsx           # Tin tức môi trường
+│   └── Landing.jsx            # Trang chủ giới thiệu
+├── services/           # API Client & Business Logic
+│   ├── apiClient.js           # Cấu hình Fetch API với JWT Token Auto-inject
+│   ├── aqiService.js          # Service lấy dữ liệu AQI
+│   ├── authService.js         # Service xác thực (Login/Logout)
+│   ├── weatherService.js      # Service dữ liệu thời tiết & dự báo 24h
+│   ├── trafficService.js      # Service giao thông (5min cache)
+│   ├── reportService.js       # Service báo cáo cộng đồng
+│   ├── newsService.js         # Service tin tức
+│   ├── userService.js         # Service quản lý người dùng
+│   ├── contentService.js      # Service nội dung (Công viên, Trạm sạc)
+│   └── index.js               # Export tất cả services
+├── context/            # React Context cho state global
+│   ├── ThemeContext.jsx       # Quản lý theme (Light/Dark mode)
+│   └── ...
+├── utils/              # Các hàm tiện ích
+│   ├── aqiCalculator.js       # Tính toán AQI theo chuẩn Vietnam QCVN 05:2013
+│   ├── aqi-color.config.js    # Cấu hình mã màu AQI
+│   └── ...
+├── assets/             # Hình ảnh, font, assets tĩnh
+│   └── ...
+├── App.jsx             # Component root
+├── App.css             # CSS global
+├── index.css           # CSS reset & Tailwind imports
+└── main.jsx            # Entry point
+```
+
+### 📝 Mô tả chi tiết các thư mục:
+
+| Thư mục | Tác dụng |
+| :--- | :--- |
+| **components/** | Chứa các component React tái sử dụng (GreenMap, Header, Weather Widget, etc.) |
+| **pages/** | Các trang chính của ứng dụng, mỗi file ứng với một route |
+| **services/** | Lớp giao tiếp với Backend API, xử lý dữ liệu và caching |
+| **context/** | Global state management bằng React Context (Theme, Auth, etc.) |
+| **utils/** | Các hàm tiện ích, tính toán (AQI, màu sắc, format dữ liệu) |
+| **assets/** | Tài nguyên tĩnh: hình ảnh, font, icon |
+
+### 🔑 Các file quan trọng:
+
+- **apiClient.js:** Quản lý Fetch API, tự động inject JWT Token vào headers, xử lý lỗi 401/403
+- **aqiCalculator.js:** Tính toán chỉ số AQI theo tiêu chuẩn Vietnam QCVN 05:2013/BYT (5 mức độ)
+- **AirQualityMap.jsx:** Bản đồ chính, hỗ trợ lọc dữ liệu, 3D view, GPS, 7 lớp dữ liệu
+- **Dashboard.jsx:** KPIs, biểu đồ phân tích, widget thời tiết, danh sách trạm
 
 ---
 

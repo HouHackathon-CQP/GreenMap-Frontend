@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//src/pages/Analytics.jsx
 import React from 'react';
 import { 
   BrainCircuit, FileText, Download, TrendingUp, 
@@ -21,7 +20,7 @@ import {
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend 
 } from 'recharts';
-import { useTheme } from '../context/ThemeContext'; // Import context
+import { useTheme } from '../context/ThemeContext';
 
 const forecastData = [
   { time: '00:00', thuc_te: 45, du_bao: 48 },

@@ -15,7 +15,7 @@
 import React from 'react';
 import { Cloud, Droplets, Wind, Sun, CloudRain, CloudLightning, Calendar } from 'lucide-react';
 import { ComposedChart, Area, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useTheme } from '../context/ThemeContext'; // Import Context
+import { useTheme } from '../context/ThemeContext';
 
 const formatTime = (isoString) => {
     if (!isoString) return '';
@@ -32,7 +32,7 @@ const getWeatherIcon = (desc) => {
 };
 
 const WeatherWidget = ({ data, locationName }) => {
-    const { theme } = useTheme(); // Lấy theme
+    const { theme } = useTheme();
 
     // Cấu hình màu cho biểu đồ
     const chartColors = {

@@ -14,36 +14,39 @@
 
 import { apiFetch } from './apiClient';
 
-// --- ĐĂNG NHẬP (GIỮ NGUYÊN) ---
 export const loginUser = async (username, password) => {
   try {
-    return await apiFetch('login', { 
-        method: 'POST', 
-        body: JSON.stringify({ username, password }) 
+    const response = await apiFetch('login', { 
+      method: 'POST', 
+      body: JSON.stringify({ email: username, password }) 
     });
-  } catch (e) {
-    console.error("Login Error:", e);
-    throw e;
+    
+    if (response.access_token) {
+      localStorage.setItem('access_token', response.access_token);
+      localStorage.setItem('user_info', JSON.stringify({
+        id: response.id,
+        email: response.email,
+        full_name: response.full_name,
+        role: response.role
+      }));
+    }
+    return response;
+  } catch (error) {
+    console.error("Login failed:", error);
+    throw error;
   }
 };
 
-// --- ĐĂNG XUẤT (MỚI) ---
 export const logoutUser = async () => {
-  // Lấy token hiện tại
   const token = localStorage.getItem('access_token');
-  
-  // Nếu không có token thì không cần gọi API
   if (!token) return;
 
   try {
-    await apiFetch('logout', { 
-        method: 'POST',
-        headers: {
-            // Quan trọng: Gửi kèm Token để backend biết ai đang logout
-            'Authorization': `Bearer ${token}`
-        }
-    });
+    await apiFetch('logout', { method: 'POST' });
   } catch (error) {
-    console.warn("API Logout warning:", error);
+    console.warn("Logout API error:", error);
+  } finally {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user_info');
   }
 };
