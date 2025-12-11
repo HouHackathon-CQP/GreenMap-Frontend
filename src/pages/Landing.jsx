@@ -454,6 +454,136 @@ export default function Landing() {
             </div>
           </div>
         </section>
+        <section id="license" className="max-w-6xl mx-auto px-4 pb-16">
+          <div className="rounded-3xl bg-gray-900/70 border border-white/10 p-8 lg:p-10 shadow-2xl">
+            <div className="mb-8">
+              <p className="text-sm uppercase tracking-[0.2em] text-emerald-200">Bản quyền & Giấy phép</p>
+              <h2 className="text-3xl font-black text-white mt-2">⚖️ License & Attribution</h2>
+              <p className="text-gray-300 mt-2">Thông tin về giấy phép mã nguồn và dữ liệu sử dụng trong dự án.</p>
+            </div>
+
+            <div className="space-y-6">
+              <div className="rounded-2xl bg-gray-800/60 border border-white/5 p-6">
+                <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                  <span className="text-emerald-400">1.</span> Mã Nguồn (Source Code)
+                </h3>
+                <p className="text-gray-300 mt-3">
+                  Mã nguồn của dự án này được phát hành dưới giấy phép <strong className="text-emerald-200">Apache License 2.0</strong>.
+                  Bạn được phép sử dụng, sửa đổi và phân phối lại mã nguồn này cho mục đích cá nhân hoặc thương mại.
+                </p>
+                <a 
+                  href="https://www.apache.org/licenses/LICENSE-2.0" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 mt-3 text-sm text-emerald-200 hover:text-emerald-300 transition-colors"
+                >
+                  Xem chi tiết giấy phép <ArrowRight size={14} />
+                </a>
+              </div>
+
+              <div className="rounded-2xl bg-gray-800/60 border border-white/5 p-6">
+                <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                  <span className="text-emerald-400">2.</span> Dữ Liệu Bản Đồ (Map Data)
+                </h3>
+                <p className="text-gray-300 mt-3">
+                  Dữ liệu địa lý được trích xuất từ <strong className="text-emerald-200">OpenStreetMap (OSM)</strong>.
+                </p>
+                <div className="mt-4 grid sm:grid-cols-2 gap-3">
+                  <div className="rounded-xl bg-gray-900/60 border border-white/5 p-4">
+                    <p className="text-xs text-gray-400 uppercase tracking-wider">Giấy phép</p>
+                    <a 
+                      href="https://opendatacommons.org/licenses/odbl/" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-emerald-200 font-semibold hover:text-emerald-300 transition-colors"
+                    >
+                      ODbL (Open Database License)
+                    </a>
+                  </div>
+                  <div className="rounded-xl bg-gray-900/60 border border-white/5 p-4">
+                    <p className="text-xs text-gray-400 uppercase tracking-wider">Attribution</p>
+                    <p className="text-white font-semibold">© OpenStreetMap contributors</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-gray-800/60 border border-white/5 p-6">
+                <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                  <span className="text-emerald-400">3.</span> Dữ Liệu Môi Trường (Environmental Data)
+                </h3>
+                <div className="mt-4 overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-white/10">
+                        <th className="text-left p-3 text-gray-400 font-semibold">Loại Dữ Liệu</th>
+                        <th className="text-left p-3 text-gray-400 font-semibold">Nguồn Cung Cấp</th>
+                        <th className="text-left p-3 text-gray-400 font-semibold">Giấy Phép</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-white/5">
+                        <td className="p-3 text-white">Chất lượng không khí (AQI)</td>
+                        <td className="p-3">
+                          <a 
+                            href="https://openaq.org/" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-emerald-200 hover:text-emerald-300 transition-colors"
+                          >
+                            OpenAQ API
+                          </a>
+                        </td>
+                        <td className="p-3 text-gray-300">Open Data / CC BY 4.0</td>
+                      </tr>
+                      <tr className="border-b border-white/5">
+                        <td className="p-3 text-white">Thời tiết (Weather)</td>
+                        <td className="p-3">
+                          <a 
+                            href="https://open-meteo.com/" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-emerald-200 hover:text-emerald-300 transition-colors"
+                          >
+                            Open-Meteo API
+                          </a>
+                        </td>
+                        <td className="p-3 text-gray-300">CC BY 4.0</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-gray-800/60 border border-white/5 p-6">
+                <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                  <span className="text-emerald-400">4.</span> Dữ Liệu Giao Thông (Traffic Data)
+                </h3>
+                <p className="text-gray-300 mt-3">
+                  Dữ liệu giao thông (Ngã Tư Sở) được lấy từ{' '}
+                  <a 
+                    href="https://www.kaggle.com/datasets/egglover05/nga-tu-so-intersection-traffic-dataset" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-emerald-200 hover:text-emerald-300 transition-colors font-semibold"
+                  >
+                    Kaggle Dataset
+                  </a>
+                </p>
+                <p className="text-sm text-gray-400 mt-2">License: Vui lòng xem mô tả trong dataset.</p>
+              </div>
+
+              <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/30 p-6">
+                <p className="text-gray-300 italic flex items-start gap-3">
+                  <span className="text-emerald-400 text-xl">ℹ️</span>
+                  <span>
+                    <strong className="text-white">Lưu ý:</strong> Dữ liệu mô phỏng giao thông được tạo bởi phần mềm SUMO 
+                    và không phản ánh tình trạng giao thông thực tế. Chỉ sử dụng cho mục đích minh họa và nghiên cứu.
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   );
