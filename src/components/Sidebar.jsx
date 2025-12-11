@@ -80,7 +80,6 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           <SectionTitle title="Giám sát" />
           <NavItem to="/dashboard" label="Tổng quan" icon={LayoutDashboard} onNavigate={closeSidebar} />
           <NavItem to="/map" label="Bản đồ chính" icon={Globe} onNavigate={closeSidebar} />
-          <NavItem to="/news" label="Tin tức" icon={Newspaper} onNavigate={closeSidebar} />
 
           <SectionTitle title="Dữ liệu" />
           <NavItem to="/parks" label="Công viên" icon={Map} onNavigate={closeSidebar} />

@@ -25,7 +25,7 @@ import ReportApproval from './pages/ReportApproval';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import AirQualityMap from './pages/AirQualityMap';
-import NewsFeed from './pages/NewsFeed';
+// import NewsFeed from './pages/NewsFeed';
 import UserManagement from './pages/UserManagement';
 import Landing from './pages/Landing';
 import Notification from './pages/Notification';
@@ -90,7 +90,7 @@ export default function App() {
         <Route element={<MainLayout isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} handleLogout={handleLogout} />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/map" element={<AirQualityMap />} />
-          <Route path="/news" element={<NewsFeed />} />
+          {/* <Route path="/news" element={<NewsFeed />} /> */}
           
           <Route path="/parks" element={<ContentManagement key="parks" title="Quản lý Công viên" locationType="PUBLIC_PARK" />} />
           <Route path="/charging" element={<ContentManagement key="charging" title="Quản lý Trạm Sạc" locationType="CHARGING_STATION" />} />
