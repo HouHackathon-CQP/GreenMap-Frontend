@@ -283,7 +283,7 @@ export default function Landing() {
                   Tải trên App Store (Coming soon)
                 </a>
                 <a
-                  href=""
+                  href="https://github.com/HouHackathon-CQP/GreenMap-Mobile-App/releases/download/1.2.0/GreenMap.apk"
                   className="inline-flex items-center px-5 py-3 rounded-2xl bg-white text-black font-semibold border border-black hover:bg-emerald-50 transition-colors"
                 >
                   Tải APK cho Android
